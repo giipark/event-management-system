@@ -5,7 +5,7 @@ export class ProfileResponseDto {
         example: '682a12bec3188b5329f655b6',
         description: '유저 고유ID',
     })
-    id: string;
+    _id: string;
 
     @ApiProperty({
         example: 'test@example.com',
@@ -27,7 +27,7 @@ export class ProfileResponseDto {
 
     static from(user: any): ProfileResponseDto {
         const dto = new ProfileResponseDto();
-        dto.id = user._id;
+        dto._id = user._id;
         dto.email = user.email;
         dto.nickname = user.nickname;
         dto.createdAt = user.createdAt;
