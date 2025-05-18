@@ -6,6 +6,8 @@ import {SignupDto} from "./dto/signup.dto";
 import * as bcrypt from 'bcrypt';
 import {JwtService} from "@nestjs/jwt";
 import {LoginDto} from "./dto/login.dto";
+import {ProfileResponseDto} from "./dto/profile.response.dto";
+import {UserResponseDto} from "./dto/user.response.dto";
 
 @Injectable()
 export class AuthService {
@@ -71,9 +73,20 @@ export class AuthService {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new UnauthorizedException('비밀번호가 틀렸습니다.');
 
-        const payload = { sub: user._id, role: user.role };
+        const payload = { sub: user._id, email: user.email, role: user.role };
         const accessToken = this.jwtService.sign(payload);
 
         return { accessToken };
+    }
+
+    /**
+     * 나의 정보 조회
+     * @param id
+     */
+    async getProfile(id: string) {
+        const user = await this.userModel.findById(id).lean();
+        if (!user) throw new Error('유저가 존재하지 않습니다.');
+
+        return ProfileResponseDto.from(user);
     }
 }
