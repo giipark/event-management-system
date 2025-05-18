@@ -14,7 +14,7 @@ export class User {
     @Prop({default: 'USER', enum: ['USER', 'ADMIN']})
     role: 'USER' | 'ADMIN';
 
-    @Prop()
+    @Prop({required: true})
     nickname: string;
 
     @Prop({unique: true})
