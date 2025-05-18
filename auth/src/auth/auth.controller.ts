@@ -11,6 +11,9 @@ import {JwtAuthGuard} from "./guards/jwt.guard";
 import {ProfileResponseDto} from "./dto/profile.response.dto";
 import {ValidateTokenRequestDto} from "./dto/validate-token.request.dto";
 import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
+import {PromoteUserRequestDto} from "./dto/promote-user.request.dto";
+import {RoleGuard} from "./guards/role.guard";
+import {Role} from "./decorators/role.decorator";
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -44,7 +47,7 @@ export class AuthController {
     @ApiResponse({status: 401, description: '유저 정보 조회 실패'})
     @ApiBearerAuth()
     async getProfile(@Request() req): Promise<ProfileResponseDto> {
-        return this.authService.getProfile(req.user.id);
+        return this.authService.getProfile(req.user._id);
     }
 
     @Post('validate-token')
@@ -54,5 +57,16 @@ export class AuthController {
     @ApiResponse({status: 401, description: '유효하지 않은 토큰'})
     async validateToken(@Body() dto: ValidateTokenRequestDto): Promise<ValidateTokenResponseDto> {
         return this.authService.validateToken(dto.headerToken);
+    }
+
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Role('ADMIN')
+    @Post('admin/promote')
+    @ApiName({summary: '유저를 관리자로 승격'})
+    @ApiResponse({status: 200, description: '성공적으로 관리자 승격 성공'})
+    @ApiResponse({status: 401, description: '관리자 승격 실패'})
+    @ApiBearerAuth()
+    async promoteUser(@Body() dto: PromoteUserRequestDto) {
+        return this.authService.promoteToAdmin(dto._id);
     }
 }

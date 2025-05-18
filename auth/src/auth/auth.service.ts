@@ -1,4 +1,4 @@
-import {ConflictException, Injectable, UnauthorizedException} from '@nestjs/common';
+import {ConflictException, Injectable, NotFoundException, UnauthorizedException} from '@nestjs/common';
 import {User, UserDocument} from "./schema/user.schema";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
@@ -83,8 +83,8 @@ export class AuthService {
      * 나의 정보 조회
      * @param id
      */
-    async getProfile(id: string) {
-        const user = await this.userModel.findById(id).lean();
+    async getProfile(_id: string) {
+        const user = await this.userModel.findById(_id).lean();
         if (!user) throw new Error('유저가 존재하지 않습니다.');
 
         return ProfileResponseDto.from(user);
@@ -104,7 +104,21 @@ export class AuthService {
             const payload = this.jwtService.verify(token);
             return ValidateTokenResponseDto.from(payload);
         } catch (err) {
-            throw new UnauthorizedException('Invalid token');
+            throw new UnauthorizedException('유효하지 않은 토큰입니다.');
         }
+    }
+
+    /**
+     * 유저를 관리자로 승격
+     * @param _id
+     */
+    async promoteToAdmin(_id: string) {
+        const user = await this.userModel.findById(_id);
+        if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
+
+        user.role = 'ADMIN';
+        await user.save();
+
+        return { success: true };
     }
 }
