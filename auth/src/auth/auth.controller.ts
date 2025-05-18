@@ -9,6 +9,8 @@ import {LoginDto} from "./dto/login.dto";
 import {LoginResponseDto} from "./dto/login.response.dto";
 import {JwtAuthGuard} from "./guards/jwt.guard";
 import {ProfileResponseDto} from "./dto/profile.response.dto";
+import {ValidateTokenRequestDto} from "./dto/validate-token.request.dto";
+import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -43,5 +45,14 @@ export class AuthController {
     @ApiBearerAuth()
     async getProfile(@Request() req): Promise<ProfileResponseDto> {
         return this.authService.getProfile(req.user.id);
+    }
+
+    @Post('validate-token')
+    @ApiName({summary: 'JWT 토큰 유효성 검증'})
+    @ApiBody({type: ValidateTokenRequestDto})
+    @ApiResponse({status: 200, description: '유효한 토큰', type: ValidateTokenResponseDto})
+    @ApiResponse({status: 401, description: '유효하지 않은 토큰'})
+    async validateToken(@Body() dto: ValidateTokenRequestDto): Promise<ValidateTokenResponseDto> {
+        return this.authService.validateToken(dto.headerToken);
     }
 }

@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 import {JwtService} from "@nestjs/jwt";
 import {LoginDto} from "./dto/login.dto";
 import {ProfileResponseDto} from "./dto/profile.response.dto";
-import {UserResponseDto} from "./dto/user.response.dto";
+import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
 
 @Injectable()
 export class AuthService {
@@ -63,20 +63,20 @@ export class AuthService {
      * @param dto
      */
     async login(dto: LoginDto): Promise<{ accessToken: string }> {
-        const { email, password } = dto;
+        const {email, password} = dto;
 
         // 이메일 체크
-        const user = await this.userModel.findOne({ email });
+        const user = await this.userModel.findOne({email});
         if (!user) throw new UnauthorizedException('가입된 이메일이 없습니다.');
 
         // 비밀번호 체크
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new UnauthorizedException('비밀번호가 틀렸습니다.');
 
-        const payload = { sub: user._id, email: user.email, role: user.role };
+        const payload = {_id: user._id, email: user.email, role: user.role};
         const accessToken = this.jwtService.sign(payload);
 
-        return { accessToken };
+        return {accessToken};
     }
 
     /**
@@ -88,5 +88,23 @@ export class AuthService {
         if (!user) throw new Error('유저가 존재하지 않습니다.');
 
         return ProfileResponseDto.from(user);
+    }
+
+    /**
+     * 토큰 유효상태 검사
+     * @param headerToken
+     */
+    async validateToken(headerToken: string) {
+        try {
+            const [bearer, token] = headerToken.split(' ');
+            if (bearer !== 'Bearer' || !token) {
+                throw new Error('유효한 토큰이 아닙니다. Bearer 토큰이 필요합니다.');
+            }
+
+            const payload = this.jwtService.verify(token);
+            return ValidateTokenResponseDto.from(payload);
+        } catch (err) {
+            throw new UnauthorizedException('Invalid token');
+        }
     }
 }
