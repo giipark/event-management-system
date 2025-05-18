@@ -13,7 +13,7 @@ import {ValidateTokenRequestDto} from "./dto/validate-token.request.dto";
 import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
 import {PromoteUserRequestDto} from "./dto/promote-user.request.dto";
 import {RoleGuard} from "./guards/role.guard";
-import {Role} from "./decorators/role.decorator";
+import {Role} from "../common/decorate/role.decorator";
 
 @ApiTags('Auth')
 @Controller('auth')
