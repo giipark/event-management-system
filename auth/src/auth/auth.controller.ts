@@ -5,6 +5,8 @@ import {SignupDto} from "./dto/signup.dto";
 import {ApiName} from "../common/decorate/api-name";
 import {UserResponseDto} from "./dto/user.response.dto";
 import {plainToInstance} from "class-transformer";
+import {LoginDto} from "./dto/login.dto";
+import {LoginResponseDto} from "./dto/login.response.dto";
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -21,5 +23,14 @@ export class AuthController {
         const user = await this.authService.signup(signupDto);
         // TODO: 회원가입 끝나자마자 바로 자동로그인하기
         return plainToInstance(UserResponseDto, user, {excludeExtraneousValues: true})
+    }
+
+    @Post('login')
+    @ApiName({summary: '로그인'})
+    @ApiBody({type: LoginDto})
+    @ApiResponse({status: 200, type: LoginResponseDto, description: '로그인 성공'})
+    @ApiResponse({status: 401, description: '로그인 실패'})
+    async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+        return this.authService.login(loginDto);
     }
 }

@@ -1,14 +1,17 @@
-import {ConflictException, Injectable} from '@nestjs/common';
+import {ConflictException, Injectable, UnauthorizedException} from '@nestjs/common';
 import {User, UserDocument} from "./schema/user.schema";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {SignupDto} from "./dto/signup.dto";
 import * as bcrypt from 'bcrypt';
+import {JwtService} from "@nestjs/jwt";
+import {LoginDto} from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectModel(User.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        private jwtService: JwtService
     ) {
     }
 
@@ -51,5 +54,26 @@ export class AuthService {
         return Array.from({length: 6}, () =>
             chars[Math.floor(Math.random() * chars.length)],
         ).join('');
+    }
+
+    /**
+     * 로그인
+     * @param dto
+     */
+    async login(dto: LoginDto): Promise<{ accessToken: string }> {
+        const { email, password } = dto;
+
+        // 이메일 체크
+        const user = await this.userModel.findOne({ email });
+        if (!user) throw new UnauthorizedException('가입된 이메일이 없습니다.');
+
+        // 비밀번호 체크
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) throw new UnauthorizedException('비밀번호가 틀렸습니다.');
+
+        const payload = { sub: user._id, role: user.role };
+        const accessToken = this.jwtService.sign(payload);
+
+        return { accessToken };
     }
 }
