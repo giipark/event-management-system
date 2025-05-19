@@ -9,6 +9,8 @@ import {ApiBearerAuth, ApiOperation, ApiResponse} from "@nestjs/swagger";
 import {CreateEventResponseDto} from "./dto/create-event.response.dto";
 import {UpdateEventResponseDto} from "./dto/update-event.response.dto";
 import {UpdateEventRequestDto} from "./dto/update-event.request.dto";
+import {CreateBenefitResponseDto} from "./dto/create-benefit.response.dto";
+import {CreateBenefitRequestDto} from "./dto/create-benefit.request.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -42,5 +44,17 @@ export class EventController {
     ): Promise<UpdateEventResponseDto> {
         const adminId = req.user.userId;
         return this.eventService.updateEvent(id, dto, adminId);
+    }
+
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Role('ADMIN')
+    @Post('event/:id/benefit')
+    @ApiName({summary: '이벤트 보상 추가'})
+    @ApiResponse({status: 201, type: [CreateBenefitResponseDto], description: '보상 등록 성공'})
+    async createBenefit(
+        @Param('id') eventId: string,
+        @Body() dtoList: CreateBenefitRequestDto[],
+    ): Promise<CreateBenefitResponseDto[]> {
+        return this.eventService.addBenefitToEvent(eventId, dtoList);
     }
 }

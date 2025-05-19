@@ -7,12 +7,14 @@ import {CreateEventRequestDto} from "./dto/create-event.request.dto";
 import {CreateEventResponseDto} from "./dto/create-event.response.dto";
 import {UpdateEventRequestDto} from "./dto/update-event.request.dto";
 import {UpdateEventResponseDto} from "./dto/update-event.response.dto";
+import {CreateBenefitRequestDto} from "./dto/create-benefit.request.dto";
+import {CreateBenefitResponseDto} from "./dto/create-benefit.response.dto";
 
 @Injectable()
 export class EventService {
     constructor(
         @InjectModel(Event.name) private eventModel: Model<EventDocument>,
-        @InjectModel(EventBenefit.name) private benefitModel: Model<EventBenefitDocument>,
+        @InjectModel(EventBenefit.name) private eventBenefitModel: Model<EventBenefitDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -43,7 +45,7 @@ export class EventService {
                     createdBy: id,
                     updatedBy: id,
                 }));
-                await this.benefitModel.insertMany(benefits);
+                await this.eventBenefitModel.insertMany(benefits);
             }
 
             await session.commitTransaction();
@@ -77,5 +79,23 @@ export class EventService {
         }
 
         return UpdateEventResponseDto.from(updated);
+    }
+
+    /**
+     * 이벤트 보상 추가
+     * @param eventId
+     * @param dtoList
+     */
+    async addBenefitToEvent(eventId: string, dtoList: CreateBenefitRequestDto[]): Promise<CreateBenefitResponseDto[]> {
+        const data = dtoList.map(dto => ({
+            eventId,
+            rewardType: dto.rewardType,
+            rewardValue: dto.rewardValue,
+            quantity: dto.quantity,
+        }));
+
+        const benefits = await this.eventBenefitModel.insertMany(data); // 배열 저장
+
+        return CreateBenefitResponseDto.fromList(benefits);
     }
 }
