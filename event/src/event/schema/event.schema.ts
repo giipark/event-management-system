@@ -32,7 +32,7 @@ export class Event {
     description: string;
 
     /** [참여형] 참여 조건 유형 (QUIZ, ALARM, NONE 등) */
-    @Prop({ required: true, enum: ['QUIZ', 'ALARM', 'NONE'] })
+    @Prop({ required: true, enum: ['QUIZ', 'ALARM', 'NONE'], default: 'NONE' })
     participantType: 'QUIZ' | 'ALARM' | 'NONE';
 
     /** [참여형] 퀴즈 정답 (QUIZ일 때만) */
