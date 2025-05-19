@@ -1,6 +1,7 @@
 import {IsOptional, IsString, IsEnum, IsBoolean} from 'class-validator';
 import {ApiProperty} from '@nestjs/swagger';
 import {EventStatus} from '../../schema/const/event-status.enum';
+import {ParticipantType} from "../../schema/const/participant-type.enum";
 
 export class UpdateEventRequestDto {
     @ApiProperty({
@@ -13,7 +14,8 @@ export class UpdateEventRequestDto {
     title?: string;
 
     @ApiProperty({
-        example: 'ACTIVE',
+        enum: EventStatus,
+        example: EventStatus.ACTIVE,
         description: '이벤트 상태 (공개/비공개)',
         required: false,
     })

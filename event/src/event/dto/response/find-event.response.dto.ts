@@ -1,5 +1,6 @@
 import {ApiProperty} from '@nestjs/swagger';
 import {EventStatus} from "../../schema/const/event-status.enum";
+import {EventType} from "../../schema/const/event-type.enum";
 
 export class FindEventResponseDto {
     @ApiProperty({example: '665022...abc', description: '이벤트 ID'})
@@ -8,7 +9,7 @@ export class FindEventResponseDto {
     @ApiProperty({example: '출석 체크 5일 이벤트'})
     title: string;
 
-    @ApiProperty({example: 'CHECK'})
+    @ApiProperty({enum: EventType, example: EventType.CHECK})
     type: string;
 
     @ApiProperty({enum: EventStatus, example: EventStatus.ACTIVE})

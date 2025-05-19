@@ -1,4 +1,8 @@
 import {ApiProperty} from '@nestjs/swagger';
+import {EventType} from "../../schema/const/event-type.enum";
+import {EventStatus} from "../../schema/const/event-status.enum";
+import {ParticipantType} from "../../schema/const/participant-type.enum";
+import {ParticipationPolicy} from "../../schema/const/participation-policy.enum";
 
 export class FindEventDetailResponseDto {
     @ApiProperty({example: '664a1234abc999001a2b333c'})
@@ -7,10 +11,10 @@ export class FindEventDetailResponseDto {
     @ApiProperty({example: '출석체크 이벤트'})
     title: string;
 
-    @ApiProperty({example: 'CHECK'})
+    @ApiProperty({enum: EventType, example: EventType.CHECK})
     type: string;
 
-    @ApiProperty({example: 'ACTIVE'})
+    @ApiProperty({enum: EventStatus, example: EventStatus.ACTIVE})
     status: string;
 
     @ApiProperty({example: false})
@@ -25,7 +29,7 @@ export class FindEventDetailResponseDto {
     @ApiProperty({example: '<p>이벤트 설명입니다.</p>'})
     description: string;
 
-    @ApiProperty({example: 'NONE'})
+    @ApiProperty({enum: ParticipantType, example: ParticipantType.NONE})
     participantType: string;
 
     @ApiProperty({example: ['SMS', 'EMAIL'], required: false})
@@ -37,7 +41,7 @@ export class FindEventDetailResponseDto {
     @ApiProperty({example: 5, required: false})
     totalDaysRequired?: number;
 
-    @ApiProperty({example: 'ONCE'})
+    @ApiProperty({enum: ParticipationPolicy, example: ParticipationPolicy.ONCE})
     participationPolicy: string;
 
     static from(entity: any): FindEventDetailResponseDto {

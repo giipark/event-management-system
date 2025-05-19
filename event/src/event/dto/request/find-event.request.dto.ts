@@ -1,11 +1,12 @@
 import {ApiPropertyOptional} from '@nestjs/swagger';
 import {EventStatus} from "../../schema/const/event-status.enum";
+import {EventType} from "../../schema/const/event-type.enum";
 
 export class FindEventRequestDto {
     @ApiPropertyOptional({example: '출석', description: '이벤트 제목 검색어 (부분 매칭)'})
     title?: string;
 
-    @ApiPropertyOptional({example: 'CHECK', description: '이벤트 유형 (ex: CHECK, PARTICIPANT, ...) '})
+    @ApiPropertyOptional({example: EventType.CHECK, description: '이벤트 유형 (ex: CHECK, PARTICIPANT, ...) '})
     type?: string;
 
     @ApiPropertyOptional({enum: EventStatus, example: EventStatus.ACTIVE, description: '상태 (ACTIVE / INACTIVE)'})

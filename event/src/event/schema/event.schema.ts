@@ -2,6 +2,8 @@ import {Prop, Schema, SchemaFactory} from '@nestjs/mongoose';
 import {Document, Types} from 'mongoose';
 import {EventType} from "./const/event-type.enum";
 import {EventStatus} from "./const/event-status.enum";
+import {ParticipationPolicy} from "./const/participation-policy.enum";
+import {ParticipantType} from "./const/participant-type.enum";
 
 export type EventDocument = Event & Document;
 
@@ -32,15 +34,15 @@ export class Event {
     description: string;
 
     /** [참여형] 참여 조건 유형 (QUIZ, ALARM, NONE 등) */
-    @Prop({ required: true, enum: ['QUIZ', 'ALARM', 'NONE'], default: 'NONE' })
-    participantType: 'QUIZ' | 'ALARM' | 'NONE';
+    @Prop({required: true, enum: ParticipantType, default: ParticipantType.NONE})
+    participantType: ParticipantType;
 
     /** [참여형] 퀴즈 정답 (QUIZ일 때만) */
     @Prop()
     quizAnswer?: string;
 
     /** [참여형] 알람 동의 항목 (ALARM일 때만) */
-    @Prop({ type: [String] })
+    @Prop({type: [String]})
     alarmTypes?: string[];
 
     /** [출석체크형] 연속 출석 일수 기준 */
@@ -52,8 +54,8 @@ export class Event {
     totalDaysRequired?: number;
 
     /** 이벤트 참여 제한 정책 (ONCE, ONCE_PER_DAY) */
-    @Prop({ enum: ['ONCE', 'ONCE_PER_DAY'], default: 'ONCE' })
-    participationPolicy: 'ONCE' | 'ONCE_PER_DAY';
+    @Prop({enum: ParticipationPolicy, default: ParticipationPolicy.ONCE})
+    participationPolicy: ParticipationPolicy;
 
     /** 이벤트 종료 여부 */
     @Prop({default: false})

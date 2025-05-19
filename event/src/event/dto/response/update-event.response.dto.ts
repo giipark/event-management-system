@@ -16,7 +16,8 @@ export class UpdateEventResponseDto {
     title: string;
 
     @ApiProperty({
-        example: 'ACTIVE',
+        enum: EventStatus,
+        example: EventStatus.ACTIVE,
         description: '이벤트 상태',
     })
     status: EventStatus;

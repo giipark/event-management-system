@@ -3,6 +3,8 @@ import {EventType} from '../../schema/const/event-type.enum';
 import {EventStatus} from '../../schema/const/event-status.enum';
 import {EventBenefitRequestDto} from "./event-benefit.request.dto";
 import {Type} from "class-transformer";
+import {ParticipationPolicy} from "../../schema/const/participation-policy.enum";
+import {ParticipantType} from "../../schema/const/participant-type.enum";
 
 export class CreateEventRequestDto {
     /** 이벤트 제목 */
@@ -31,12 +33,12 @@ export class CreateEventRequestDto {
     endAt: string;
 
     /** 참여 제한 정책 */
-    @IsEnum(['ONCE', 'ONCE_PER_DAY'])
-    participationPolicy: 'ONCE' | 'ONCE_PER_DAY';
+    @IsEnum(ParticipationPolicy)
+    participationPolicy: ParticipationPolicy;
 
     /** 참여 조건 유형 (QUIZ, ALARM, NONE) */
-    @IsEnum(['QUIZ', 'ALARM', 'NONE'])
-    participantType: 'QUIZ' | 'ALARM' | 'NONE';
+    @IsEnum(ParticipantType)
+    participantType: ParticipantType;
 
     /** 퀴즈 정답 (QUIZ일 때) */
     @IsOptional()

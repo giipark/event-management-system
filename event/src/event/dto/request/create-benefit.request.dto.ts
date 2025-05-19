@@ -1,7 +1,8 @@
 import {ApiProperty} from '@nestjs/swagger';
+import {RewardType} from "../../schema/const/reward-type.enum";
 
 export class CreateBenefitRequestDto {
-    @ApiProperty({example: 'POINT', description: '보상 타입 (예: POINT, COUPON, ITEM)'})
+    @ApiProperty({enum: RewardType, example: RewardType.POINT, description: '보상 타입 (예: POINT, COUPON, ITEM)'})
     rewardType: string;
 
     @ApiProperty({example: 100, description: '보상 값'})
