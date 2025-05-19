@@ -4,6 +4,7 @@ import {ClientSession, Connection, Model} from "mongoose";
 import {Event, EventDocument} from "./schema/event.schema";
 import {EventBenefit, EventBenefitDocument} from "./schema/event-bnef.schema";
 import {CreateEventDto} from "./dto/create-event.dto";
+import {CreateEventResponseDto} from "./dto/create-event.response.dto";
 
 @Injectable()
 export class EventService {
@@ -19,7 +20,7 @@ export class EventService {
      * @param dto
      * @param id
      */
-    async createEvent(dto: CreateEventDto, id: string) {
+    async createEvent(dto: CreateEventDto, id: string): Promise<CreateEventResponseDto> {
         const session: ClientSession = await this.connection.startSession();
         session.startTransaction();
 
@@ -46,7 +47,7 @@ export class EventService {
             await session.commitTransaction();
             await session.endSession();
 
-            return {eventId: savedEvent._id};
+            return CreateEventResponseDto.from(savedEvent);
         } catch (err) {
             await session.abortTransaction();
             await session.endSession();
