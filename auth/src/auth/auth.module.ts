@@ -6,10 +6,14 @@ import {User, UserSchema} from "../user/schema/user.schema";
 import {JwtModule} from "@nestjs/jwt";
 import {ConfigModule, ConfigService} from "@nestjs/config";
 import {JwtStrategy} from "./strategies/jwt.strategy";
+import {Inventory, InventorySchema} from "../user/schema/inventory.schema";
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{name: User.name, schema: UserSchema}]),
+        MongooseModule.forFeature([
+            {name: User.name, schema: UserSchema},
+            {name: Inventory.name, schema: InventorySchema},
+        ]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: (config: ConfigService) => ({

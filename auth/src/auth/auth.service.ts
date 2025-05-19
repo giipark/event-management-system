@@ -1,18 +1,21 @@
 import {ConflictException, Injectable, NotFoundException, UnauthorizedException} from '@nestjs/common';
 import {User, UserDocument} from "../user/schema/user.schema";
-import {InjectModel} from "@nestjs/mongoose";
-import {Model} from "mongoose";
+import {InjectConnection, InjectModel} from "@nestjs/mongoose";
+import {Connection, Model} from "mongoose";
 import {SignupDto} from "./dto/signup.dto";
 import * as bcrypt from 'bcrypt';
 import {JwtService} from "@nestjs/jwt";
 import {LoginDto} from "./dto/login.dto";
 import {ProfileResponseDto} from "./dto/profile.response.dto";
 import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
+import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
+        @InjectConnection() private readonly connection: Connection,
         private jwtService: JwtService
     ) {
     }
@@ -32,19 +35,37 @@ export class AuthService {
 
         // 패스워드 암호화
         const hashed = await bcrypt.hash(password, 10);
-
-        // 추천인코드 생성
         const recommendCode = this.generateRecommendCode();
 
-        const user = new this.userModel({
-            email,
-            password: hashed,
-            nickname,
-            recommendCode,
-            role: 'USER'
-        });
+        const session = await this.connection.startSession();
+        session.startTransaction();
 
-        return (await user.save()).toObject();
+        try {
+            // 유저 생성
+            const user = await this.userModel.create([{
+                email,
+                password: hashed,
+                nickname,
+                recommendCode,
+                role: 'USER',
+            }], {session});
+
+            // 인벤토리 생성
+            await this.inventoryModel.create([{
+                userId: user[0]._id,
+                point: 0,
+                coupons: [],
+                items: [],
+            }], {session});
+
+            await session.commitTransaction();
+            return user[0].toObject();
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            await session.endSession();
+        }
     }
 
     /**
@@ -119,6 +140,6 @@ export class AuthService {
         user.role = 'ADMIN';
         await user.save();
 
-        return { success: true };
+        return {success: true};
     }
 }
