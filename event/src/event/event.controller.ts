@@ -5,7 +5,7 @@ import {JwtAuthGuard} from "../auth/guards/jwt.guard";
 import {RoleGuard} from "../auth/guards/role.guard";
 import {Role} from "../common/decorate/role.decorator";
 import {ApiName} from "../common/decorate/api-name";
-import {ApiBearerAuth, ApiResponse} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiParam, ApiQuery, ApiResponse} from "@nestjs/swagger";
 import {CreateEventResponseDto} from "./dto/response/create-event.response.dto";
 import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
 import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
@@ -15,6 +15,8 @@ import {FindEventResponseDto} from "./dto/response/find-event.response.dto";
 import {FindEventRequestDto} from "./dto/request/find-event.request.dto";
 import {RoleType} from "./schema/const/role-type.enum";
 import {FindEventDetailResponseDto} from "./dto/response/find-event-detail.response.dto";
+import {FindEventParticipantsResponseDto} from "./dto/response/find-event-participants.response.dto";
+import {FindEventParticipantsRequestDto} from "./dto/request/find-event-participants.request.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -64,8 +66,8 @@ export class EventController {
 
     @Get('event')
     @UseGuards(JwtAuthGuard)
-    @ApiName({ summary: '이벤트 목록 조회' })
-    @ApiResponse({ status: 200, description: '이벤트 목록 반환', type: [FindEventResponseDto] })
+    @ApiName({summary: '이벤트 목록 조회'})
+    @ApiResponse({status: 200, description: '이벤트 목록 반환', type: [FindEventResponseDto]})
     async getEventList(
         @Query() query: FindEventRequestDto,
         @Request() req,
@@ -75,14 +77,26 @@ export class EventController {
 
     @Get('event/:id')
     @UseGuards(JwtAuthGuard)
-    @ApiName({ summary: '이벤트 상세 조회' })
-    @ApiResponse({ status: 200, type: FindEventDetailResponseDto })
-    @ApiResponse({ status: 404, description: '이벤트를 찾을 수 없음' })
+    @ApiName({summary: '이벤트 상세 조회'})
+    @ApiResponse({status: 200, type: FindEventDetailResponseDto})
+    @ApiResponse({status: 404, description: '이벤트를 찾을 수 없음'})
     async getEventDetail(
         @Param('id') id: string,
         @Request() req,
     ): Promise<FindEventDetailResponseDto> {
         return this.eventService.findEventDetail(id, req.user.role);
+    }
+
+    @Get('event/:id/participants')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Role(RoleType.ADMIN)
+    @ApiName({summary: '이벤트 응모자 목록 조회'})
+    @ApiQuery({type: FindEventParticipantsRequestDto})
+    @ApiResponse({status: 200, type: [FindEventParticipantsResponseDto]})
+    async getEventParticipants(
+        @Query() query: FindEventParticipantsRequestDto,
+    ): Promise<FindEventParticipantsResponseDto[]> {
+        return this.eventService.findEventParticipants(query);
     }
 
 }

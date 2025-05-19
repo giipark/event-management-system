@@ -1,6 +1,6 @@
 import {Injectable, NotFoundException} from '@nestjs/common';
 import {InjectConnection, InjectModel} from "@nestjs/mongoose";
-import {ClientSession, Connection, Model} from "mongoose";
+import {ClientSession, Connection, Model, Types} from "mongoose";
 import {Event, EventDocument} from "./schema/event.schema";
 import {EventBenefit, EventBenefitDocument} from "./schema/event-bnef.schema";
 import {CreateEventRequestDto} from "./dto/request/create-event.request.dto";
@@ -14,12 +14,16 @@ import {RoleType} from "./schema/const/role-type.enum";
 import {FindEventResponseDto} from "./dto/response/find-event.response.dto";
 import {EventStatus} from "./schema/const/event-status.enum";
 import {FindEventDetailResponseDto} from "./dto/response/find-event-detail.response.dto";
+import {FindEventParticipantsResponseDto} from "./dto/response/find-event-participants.response.dto";
+import {EventRequest, EventRequestDocument} from "./schema/event-req.schema";
+import {FindEventParticipantsRequestDto} from "./dto/request/find-event-participants.request.dto";
 
 @Injectable()
 export class EventService {
     constructor(
         @InjectModel(Event.name) private eventModel: Model<EventDocument>,
         @InjectModel(EventBenefit.name) private eventBenefitModel: Model<EventBenefitDocument>,
+        @InjectModel(EventRequest.name) private eventReqModel: Model<EventRequestDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -113,7 +117,7 @@ export class EventService {
         const condition: any = {};
 
         // 검색 조건
-        if (query.title) condition.title = { $regex: query.title, $options: 'i' };
+        if (query.title) condition.title = {$regex: query.title, $options: 'i'};
         if (query.type) condition.type = query.type;
         if (query.status) condition.status = query.status;
         if (query.isEnded !== undefined) condition.isEnded = query.isEnded;
@@ -133,11 +137,11 @@ export class EventService {
 
             // 기간 내 포함된 이벤트만
             const today = new Date();
-            condition.startAt = { $lte: today };
-            condition.endAt = { $gte: today };
+            condition.startAt = {$lte: today};
+            condition.endAt = {$gte: today};
         }
 
-        const events = await this.eventModel.find(condition).sort({ createdAt: -1 }).lean();
+        const events = await this.eventModel.find(condition).sort({createdAt: -1}).lean();
         return FindEventResponseDto.fromList(events);
     }
 
@@ -147,7 +151,7 @@ export class EventService {
      * @param role
      */
     async findEventDetail(id: string, role: RoleType): Promise<FindEventDetailResponseDto> {
-        const condition: any = { _id: id };
+        const condition: any = {_id: id};
 
         if (role === RoleType.USER) {
             condition.status = EventStatus.ACTIVE;
@@ -155,14 +159,51 @@ export class EventService {
 
             // 기간 내 포함된 이벤트만
             const today = new Date();
-            condition.startAt = { $lte: today };
-            condition.endAt = { $gte: today };
+            condition.startAt = {$lte: today};
+            condition.endAt = {$gte: today};
         }
 
         const event = await this.eventModel.findOne(condition).lean();
         if (!event) throw new NotFoundException('이벤트를 찾을 수 없습니다.');
 
         return FindEventDetailResponseDto.from(event);
+    }
+
+    /**
+     * 이벤트 응모자 목록 조회
+     * @param query
+     */
+    async findEventParticipants(query: FindEventParticipantsRequestDto): Promise<FindEventParticipantsResponseDto[]> {
+        const match: any = {};
+
+        if (query.eventId) {
+            match.eventId = new Types.ObjectId(query.eventId);
+        }
+
+        const sortOrder = query.order === 'asc' ? 1 : -1;
+
+        const participants = await this.eventReqModel.aggregate([
+            {$match: match},
+            {$sort: {joinedAt: sortOrder}},
+            {
+                $group: {
+                    _id: '$userId',
+                    doc: {$first: '$$ROOT'},
+                },
+            },
+            {$replaceRoot: {newRoot: '$doc'}},
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'user',
+                },
+            },
+            {$unwind: '$user'},
+        ]);
+
+        return FindEventParticipantsResponseDto.fromList(participants);
     }
 
 }
