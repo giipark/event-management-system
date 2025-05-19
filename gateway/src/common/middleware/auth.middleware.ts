@@ -15,7 +15,7 @@ export class AuthMiddleware implements NestMiddleware {
         if (!isProtected) return next();
 
         const authHeader = req.headers['authorization'];
-        if (!authHeader) throw new UnauthorizedException('authorization 헤더가 존재하지 않습니다.');
+        if (!authHeader) throw new UnauthorizedException('Authorization 헤더가 존재하지 않습니다.');
 
         try {
             const {data} = await axios.post('http://auth:3001/auth/validate-token', {
