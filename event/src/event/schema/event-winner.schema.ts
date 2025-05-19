@@ -1,6 +1,7 @@
 import {Prop, Schema, SchemaFactory} from '@nestjs/mongoose';
 import {Document, Types} from 'mongoose';
 import {RewardType} from './const/reward-type.enum';
+import {RewardStatus} from "./const/reward-status.enum";
 
 export type EventWinnerDocument = EventWinner & Document;
 
@@ -27,7 +28,7 @@ export class EventWinner {
     rewardValue: string;
 
     /** 보상 지급 상태 (WAITING, COMPLETED, CANCELLED) */
-    @Prop({required: true, enum: ['WAITING', 'COMPLETED', 'CANCELLED'], default: 'WAITING'})
+    @Prop({required: true, enum: RewardStatus, default: RewardStatus.WAITING})
     status: string;
 
     /** 당첨 일시 */

@@ -17,6 +17,9 @@ import {FindEventDetailResponseDto} from "./dto/response/find-event-detail.respo
 import {FindEventParticipantsResponseDto} from "./dto/response/find-event-participants.response.dto";
 import {EventRequest, EventRequestDocument} from "./schema/event-req.schema";
 import {FindEventParticipantsRequestDto} from "./dto/request/find-event-participants.request.dto";
+import {FindEventWinnersRequestDto} from "./dto/request/find-event-winners.request.dto";
+import {FindEventWinnersResponseDto} from "./dto/response/find-event-winners.response.dto";
+import {EventWinner, EventWinnerDocument} from "./schema/event-winner.schema";
 
 @Injectable()
 export class EventService {
@@ -24,6 +27,7 @@ export class EventService {
         @InjectModel(Event.name) private eventModel: Model<EventDocument>,
         @InjectModel(EventBenefit.name) private eventBenefitModel: Model<EventBenefitDocument>,
         @InjectModel(EventRequest.name) private eventReqModel: Model<EventRequestDocument>,
+        @InjectModel(EventWinner.name) private eventWinnerModel: Model<EventWinnerDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -205,5 +209,28 @@ export class EventService {
 
         return FindEventParticipantsResponseDto.fromList(participants);
     }
+
+    /**
+     * 이벤트 당첨자 목록 조회
+     * @param query
+     */
+    async findEventWinners(query: FindEventWinnersRequestDto): Promise<FindEventWinnersResponseDto[]> {
+        const condition: any = {};
+
+        if (query.eventId) {
+            condition.eventId = new Types.ObjectId(query.eventId);
+        }
+
+        const winners = await this.eventWinnerModel
+            .find(condition)
+            .populate('userId', 'email')
+            .sort({ wonAt: -1 })
+            .lean();
+
+        return FindEventWinnersResponseDto.fromList(
+            winners.map(w => ({ ...w, user: w.userId }))
+        );
+    }
+
 
 }

@@ -17,6 +17,8 @@ import {RoleType} from "./schema/const/role-type.enum";
 import {FindEventDetailResponseDto} from "./dto/response/find-event-detail.response.dto";
 import {FindEventParticipantsResponseDto} from "./dto/response/find-event-participants.response.dto";
 import {FindEventParticipantsRequestDto} from "./dto/request/find-event-participants.request.dto";
+import {FindEventWinnersResponseDto} from "./dto/response/find-event-winners.response.dto";
+import {FindEventWinnersRequestDto} from "./dto/request/find-event-winners.request.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -97,6 +99,17 @@ export class EventController {
         @Query() query: FindEventParticipantsRequestDto,
     ): Promise<FindEventParticipantsResponseDto[]> {
         return this.eventService.findEventParticipants(query);
+    }
+
+    @Get('event/winners')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Role(RoleType.ADMIN)
+    @ApiName({summary: '이벤트 당첨자 목록 조회'})
+    @ApiResponse({status: 200, type: [FindEventWinnersResponseDto]})
+    async getEventWinners(
+        @Query() query: FindEventWinnersRequestDto,
+    ): Promise<FindEventWinnersResponseDto[]> {
+        return this.eventService.findEventWinners(query);
     }
 
 }
