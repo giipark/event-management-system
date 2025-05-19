@@ -9,6 +9,10 @@ import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
 import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
 import {CreateBenefitRequestDto} from "./dto/request/create-benefit.request.dto";
 import {CreateBenefitResponseDto} from "./dto/response/create-benefit.response.dto";
+import {FindEventRequestDto} from "./dto/request/find-event.request.dto";
+import {RoleType} from "./schema/const/role-type.enum";
+import {FindEventResponseDto} from "./dto/response/find-event.response.dto";
+import {EventStatus} from "./schema/const/event-status.enum";
 
 @Injectable()
 export class EventService {
@@ -98,4 +102,42 @@ export class EventService {
 
         return CreateBenefitResponseDto.fromList(benefits);
     }
+
+    /**
+     * 이벤트 목록 조회
+     * @param query
+     * @param role
+     */
+    async findEventList(query: FindEventRequestDto, role: RoleType) {
+        const condition: any = {};
+
+        // 검색 조건
+        if (query.title) condition.title = { $regex: query.title, $options: 'i' };
+        if (query.type) condition.type = query.type;
+        if (query.status) condition.status = query.status;
+        if (query.isEnded !== undefined) condition.isEnded = query.isEnded;
+
+        // 이벤트 기간 조건 필터 (조회기간 범위 지정)
+        if (query.startDate || query.endDate) {
+            condition.startAt = {};
+
+            if (query.startDate) condition.startAt.$gte = new Date(query.startDate);
+            if (query.endDate) condition.startAt.$lte = new Date(query.endDate);
+        }
+
+        // USER 권한 제한 추가 필터
+        if (role === RoleType.USER) {
+            condition.status = EventStatus.ACTIVE;
+            condition.isEnded = false;
+
+            // 기간 내 포함된 이벤트만
+            const today = new Date();
+            condition.startAt = { $lte: today };
+            condition.endAt = { $gte: today };
+        }
+
+        const events = await this.eventModel.find(condition).sort({ createdAt: -1 }).lean();
+        return FindEventResponseDto.fromList(events);
+    }
+
 }
