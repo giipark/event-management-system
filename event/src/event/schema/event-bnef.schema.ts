@@ -23,7 +23,7 @@ export class EventBenefit {
 
     /** 최대 당첨자 수 (0이면 제한 없음)*/
     @Prop({required: true, default: 0})
-    maxWinners?: number;
+    maxWinners: number;
 
     /** [뽑기형] 당첨 확률 (룰렛/랜덤용, % 단위) */
     @Prop()
@@ -33,7 +33,7 @@ export class EventBenefit {
     @Prop()
     invitationLimit?: number;
 
-    /** [출석체크형] 필요한 출석 일 수 (연속) */
+    /** [출석체크형] 필요한 출석 일 수 (비연속) */
     @Prop()
     checkInDaysRequired?: number;
 }
