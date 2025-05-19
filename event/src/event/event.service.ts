@@ -13,6 +13,7 @@ import {FindEventRequestDto} from "./dto/request/find-event.request.dto";
 import {RoleType} from "./schema/const/role-type.enum";
 import {FindEventResponseDto} from "./dto/response/find-event.response.dto";
 import {EventStatus} from "./schema/const/event-status.enum";
+import {FindEventDetailResponseDto} from "./dto/response/find-event-detail.response.dto";
 
 @Injectable()
 export class EventService {
@@ -138,6 +139,30 @@ export class EventService {
 
         const events = await this.eventModel.find(condition).sort({ createdAt: -1 }).lean();
         return FindEventResponseDto.fromList(events);
+    }
+
+    /**
+     * 이벤트 상세조회
+     * @param id
+     * @param role
+     */
+    async findEventDetail(id: string, role: RoleType): Promise<FindEventDetailResponseDto> {
+        const condition: any = { _id: id };
+
+        if (role === RoleType.USER) {
+            condition.status = EventStatus.ACTIVE;
+            condition.isEnded = false;
+
+            // 기간 내 포함된 이벤트만
+            const today = new Date();
+            condition.startAt = { $lte: today };
+            condition.endAt = { $gte: today };
+        }
+
+        const event = await this.eventModel.findOne(condition).lean();
+        if (!event) throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+
+        return FindEventDetailResponseDto.from(event);
     }
 
 }

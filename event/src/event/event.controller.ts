@@ -14,6 +14,7 @@ import {CreateBenefitRequestDto} from "./dto/request/create-benefit.request.dto"
 import {FindEventResponseDto} from "./dto/response/find-event.response.dto";
 import {FindEventRequestDto} from "./dto/request/find-event.request.dto";
 import {RoleType} from "./schema/const/role-type.enum";
+import {FindEventDetailResponseDto} from "./dto/response/find-event-detail.response.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -49,9 +50,9 @@ export class EventController {
         return this.eventService.updateEvent(id, dto, adminId);
     }
 
+    @Post('event/:id/benefit')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
-    @Post('event/:id/benefit')
     @ApiName({summary: '이벤트 보상 추가'})
     @ApiResponse({status: 201, type: [CreateBenefitResponseDto], description: '보상 등록 성공'})
     async createBenefit(
@@ -61,8 +62,8 @@ export class EventController {
         return this.eventService.addBenefitToEvent(eventId, dtoList);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get('event')
+    @UseGuards(JwtAuthGuard)
     @ApiName({ summary: '이벤트 목록 조회' })
     @ApiResponse({ status: 200, description: '이벤트 목록 반환', type: [FindEventResponseDto] })
     async getEventList(
@@ -71,4 +72,17 @@ export class EventController {
     ): Promise<FindEventResponseDto[]> {
         return this.eventService.findEventList(query, req.user.role);
     }
+
+    @Get('event/:id')
+    @UseGuards(JwtAuthGuard)
+    @ApiName({ summary: '이벤트 상세 조회' })
+    @ApiResponse({ status: 200, type: FindEventDetailResponseDto })
+    @ApiResponse({ status: 404, description: '이벤트를 찾을 수 없음' })
+    async getEventDetail(
+        @Param('id') id: string,
+        @Request() req,
+    ): Promise<FindEventDetailResponseDto> {
+        return this.eventService.findEventDetail(id, req.user.role);
+    }
+
 }
