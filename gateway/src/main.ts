@@ -34,7 +34,8 @@ function addProxyMiddleware(app: INestApplication) {
                     target: 'http://auth:3001',
                     changeOrigin: true,
                 })(req, res, next);
-            } else if (req.url.startsWith('/event')) {
+            } else if (req.url.startsWith('/event') ||
+                req.url.startsWith('/my')) {
                 createProxyMiddleware({
                     target: 'http://event:3002',
                     changeOrigin: true,
