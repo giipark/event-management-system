@@ -2,7 +2,6 @@ import {Prop, Schema, SchemaFactory} from '@nestjs/mongoose';
 import {Document, Types} from 'mongoose';
 import {EventType} from "./const/event-type.enum";
 import {EventStatus} from "./const/event-status.enum";
-import {RewardType} from "./const/reward-type.enum";
 
 export type EventDocument = Event & Document;
 
@@ -32,13 +31,9 @@ export class Event {
     @Prop()
     description: string;
 
-    /** 이벤트 보상 유형 */
-    @Prop({required: true, enum: RewardType})
-    rewardType: RewardType;
-
-    /** 이벤트 보상 내용 */
-    @Prop({required: true})
-    rewardValue: string;
+    /** 이벤트 참여 제한 정책 (ONCE, ONCE_PER_DAY) */
+    @Prop({ enum: ['ONCE', 'ONCE_PER_DAY'], default: 'ONCE' })
+    participationPolicy: 'ONCE' | 'ONCE_PER_DAY';
 
     /** 이벤트 종료 여부 */
     @Prop({default: false})
