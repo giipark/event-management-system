@@ -3,12 +3,12 @@ import {InjectConnection, InjectModel} from "@nestjs/mongoose";
 import {ClientSession, Connection, Model} from "mongoose";
 import {Event, EventDocument} from "./schema/event.schema";
 import {EventBenefit, EventBenefitDocument} from "./schema/event-bnef.schema";
-import {CreateEventRequestDto} from "./dto/create-event.request.dto";
-import {CreateEventResponseDto} from "./dto/create-event.response.dto";
-import {UpdateEventRequestDto} from "./dto/update-event.request.dto";
-import {UpdateEventResponseDto} from "./dto/update-event.response.dto";
-import {CreateBenefitRequestDto} from "./dto/create-benefit.request.dto";
-import {CreateBenefitResponseDto} from "./dto/create-benefit.response.dto";
+import {CreateEventRequestDto} from "./dto/request/create-event.request.dto";
+import {CreateEventResponseDto} from "./dto/response/create-event.response.dto";
+import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
+import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
+import {CreateBenefitRequestDto} from "./dto/request/create-benefit.request.dto";
+import {CreateBenefitResponseDto} from "./dto/response/create-benefit.response.dto";
 
 @Injectable()
 export class EventService {

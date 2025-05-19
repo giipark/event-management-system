@@ -1,6 +1,6 @@
 import {ApiProperty} from '@nestjs/swagger';
-import {EventStatus} from '../schema/const/event-status.enum';
-import {EventDocument} from '../schema/event.schema';
+import {EventStatus} from '../../schema/const/event-status.enum';
+import {EventDocument} from '../../schema/event.schema';
 
 export class UpdateEventResponseDto {
     @ApiProperty({

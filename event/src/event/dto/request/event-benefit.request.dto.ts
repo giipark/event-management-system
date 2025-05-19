@@ -1,4 +1,4 @@
-import {RewardType} from "../schema/const/reward-type.enum";
+import {RewardType} from "../../schema/const/reward-type.enum";
 import {IsEnum, IsNumber, IsOptional, IsString} from "class-validator";
 
 export class EventBenefitRequestDto {

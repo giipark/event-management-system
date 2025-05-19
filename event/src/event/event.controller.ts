@@ -1,16 +1,16 @@
 import {Body, Controller, Param, Patch, Post, Req, UseGuards} from '@nestjs/common';
 import {EventService} from "./event.service";
-import {CreateEventRequestDto} from "./dto/create-event.request.dto";
+import {CreateEventRequestDto} from "./dto/request/create-event.request.dto";
 import {JwtAuthGuard} from "../auth/guards/jwt.guard";
 import {RoleGuard} from "../auth/guards/role.guard";
 import {Role} from "../common/decorate/role.decorator";
 import {ApiName} from "../common/decorate/api-name";
 import {ApiBearerAuth, ApiOperation, ApiResponse} from "@nestjs/swagger";
-import {CreateEventResponseDto} from "./dto/create-event.response.dto";
-import {UpdateEventResponseDto} from "./dto/update-event.response.dto";
-import {UpdateEventRequestDto} from "./dto/update-event.request.dto";
-import {CreateBenefitResponseDto} from "./dto/create-benefit.response.dto";
-import {CreateBenefitRequestDto} from "./dto/create-benefit.request.dto";
+import {CreateEventResponseDto} from "./dto/response/create-event.response.dto";
+import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
+import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
+import {CreateBenefitResponseDto} from "./dto/response/create-benefit.response.dto";
+import {CreateBenefitRequestDto} from "./dto/request/create-benefit.request.dto";
 
 @Controller('event')
 @ApiBearerAuth()

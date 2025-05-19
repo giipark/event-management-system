@@ -1,6 +1,6 @@
 import {IsArray, IsDateString, IsEnum, IsNumber, IsOptional, IsString, ValidateNested} from 'class-validator';
-import {EventType} from '../schema/const/event-type.enum';
-import {EventStatus} from '../schema/const/event-status.enum';
+import {EventType} from '../../schema/const/event-type.enum';
+import {EventStatus} from '../../schema/const/event-status.enum';
 import {EventBenefitRequestDto} from "./event-benefit.request.dto";
 import {Type} from "class-transformer";
 

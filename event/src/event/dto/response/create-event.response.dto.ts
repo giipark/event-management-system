@@ -1,6 +1,6 @@
 import {ApiProperty} from '@nestjs/swagger';
-import {EventType} from '../schema/const/event-type.enum';
-import {EventStatus} from '../schema/const/event-status.enum';
+import {EventType} from '../../schema/const/event-type.enum';
+import {EventStatus} from '../../schema/const/event-status.enum';
 
 export class CreateEventResponseDto {
     @ApiProperty({description: '생성된 이벤트 ID'})

@@ -1,6 +1,6 @@
 import {IsOptional, IsString, IsEnum, IsBoolean} from 'class-validator';
 import {ApiProperty} from '@nestjs/swagger';
-import {EventStatus} from '../schema/const/event-status.enum';
+import {EventStatus} from '../../schema/const/event-status.enum';
 
 export class UpdateEventRequestDto {
     @ApiProperty({
