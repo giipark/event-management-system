@@ -29,7 +29,7 @@ export class EventWinner {
 
     /** 보상 지급 상태 (WAITING, COMPLETED, CANCELLED) */
     @Prop({required: true, enum: RewardStatus, default: RewardStatus.WAITING})
-    status: string;
+    status: RewardStatus;
 
     /** 당첨 일시 */
     @Prop({default: () => new Date()})

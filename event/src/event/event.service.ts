@@ -220,6 +220,9 @@ export class EventService {
         if (query.eventId) {
             condition.eventId = new Types.ObjectId(query.eventId);
         }
+        if (query.status) {
+            condition.status = query.status;
+        }
 
         const winners = await this.eventWinnerModel
             .find(condition)
