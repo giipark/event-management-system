@@ -26,6 +26,10 @@ export class EventWinner {
     @Prop({required: true})
     rewardValue: string;
 
+    /** 보상 지급 상태 (WAITING, COMPLETED, CANCELLED) */
+    @Prop({required: true, enum: ['WAITING', 'COMPLETED', 'CANCELLED'], default: 'WAITING'})
+    status: string;
+
     /** 당첨 일시 */
     @Prop({default: () => new Date()})
     wonAt: Date;
