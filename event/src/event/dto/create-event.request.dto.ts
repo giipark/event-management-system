@@ -1,10 +1,10 @@
 import {IsArray, IsDateString, IsEnum, IsNumber, IsOptional, IsString, ValidateNested} from 'class-validator';
 import {EventType} from '../schema/const/event-type.enum';
 import {EventStatus} from '../schema/const/event-status.enum';
-import {EventBenefitDto} from "./event-benefit.dto";
+import {EventBenefitRequestDto} from "./event-benefit.request.dto";
 import {Type} from "class-transformer";
 
-export class CreateEventDto {
+export class CreateEventRequestDto {
     /** 이벤트 제목 */
     @IsString()
     title: string;
@@ -62,6 +62,6 @@ export class CreateEventDto {
     /** 보상 목록 */
     @IsArray()
     @ValidateNested({each: true})
-    @Type(() => EventBenefitDto)
-    benefits: EventBenefitDto[]
+    @Type(() => EventBenefitRequestDto)
+    benefits: EventBenefitRequestDto[]
 }

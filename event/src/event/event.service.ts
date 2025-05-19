@@ -1,10 +1,12 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import {InjectConnection, InjectModel} from "@nestjs/mongoose";
 import {ClientSession, Connection, Model} from "mongoose";
 import {Event, EventDocument} from "./schema/event.schema";
 import {EventBenefit, EventBenefitDocument} from "./schema/event-bnef.schema";
-import {CreateEventDto} from "./dto/create-event.dto";
+import {CreateEventRequestDto} from "./dto/create-event.request.dto";
 import {CreateEventResponseDto} from "./dto/create-event.response.dto";
+import {UpdateEventRequestDto} from "./dto/update-event.request.dto";
+import {UpdateEventResponseDto} from "./dto/update-event.response.dto";
 
 @Injectable()
 export class EventService {
@@ -20,7 +22,7 @@ export class EventService {
      * @param dto
      * @param id
      */
-    async createEvent(dto: CreateEventDto, id: string): Promise<CreateEventResponseDto> {
+    async createEvent(dto: CreateEventRequestDto, id: string): Promise<CreateEventResponseDto> {
         const session: ClientSession = await this.connection.startSession();
         session.startTransaction();
 
@@ -53,5 +55,27 @@ export class EventService {
             await session.endSession();
             throw err;
         }
+    }
+
+    /**
+     * 이벤트 수정
+     * @param id
+     * @param dto
+     * @param adminId
+     */
+    async updateEvent(id: string, dto: UpdateEventRequestDto, adminId: string,): Promise<UpdateEventResponseDto> {
+        const updated = await this.eventModel.findByIdAndUpdate(
+            id, {
+                ...dto,
+                updatedBy: adminId,
+            },
+            {new: true},
+        );
+
+        if (!updated) {
+            throw new NotFoundException('해당 이벤트를 찾을 수 없습니다.');
+        }
+
+        return UpdateEventResponseDto.from(updated);
     }
 }

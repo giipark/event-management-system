@@ -1,7 +1,7 @@
 import {RewardType} from "../schema/const/reward-type.enum";
 import {IsEnum, IsNumber, IsOptional, IsString} from "class-validator";
 
-export class EventBenefitDto {
+export class EventBenefitRequestDto {
     /** 보상 타입 */
     @IsEnum(RewardType)
     rewardType: RewardType;
