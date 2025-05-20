@@ -45,6 +45,20 @@ docker compose down
 docker compose stop
 ```
 
+## ✅ 프로젝트 참고
+### 📙정리 Notion 페이지
+https://www.notion.so/gipark181/1f92289ab9b08086ad76f7d0ab5855ae?pvs=4
+
+- 아래와 같이 내부 컨테이너끼리만 소통할 수 있도록 할 수 있고, swagger를 통해 볼 수 있도록 외부포트를 열어두었습니다.
+```yaml
+services:
+  auth:
+    build: ./auth
+    ports: [] # ← 외부 포트 열지 않음
+    expose:
+      - "3001" # 내부 컨테이너끼리만 통신 가능
+```
+
 ## ☑️ Git Commit Message Convention Guide
 ### 규칙
 - `FEAT` - 새로운 기능 추가
