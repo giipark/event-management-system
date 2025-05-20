@@ -6,6 +6,7 @@ import {Event, EventSchema} from "../event/schema/event.schema";
 import {EventRequest, EventRequestSchema} from "../event/schema/event-req.schema";
 import {Inventory, InventorySchema} from "./schema/inventory.schema";
 import {EventWinner, EventWinnerSchema} from "../event/schema/event-winner.schema";
+import {User, UserSchema} from "./schema/user.schema";
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import {EventWinner, EventWinnerSchema} from "../event/schema/event-winner.schem
             {name: Event.name, schema: EventSchema},
             {name: EventRequest.name, schema: EventRequestSchema},
             {name: EventWinner.name, schema: EventWinnerSchema},
+            {name: User.name, schema: UserSchema},
         ]),
     ],
     controllers: [UserController],

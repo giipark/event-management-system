@@ -6,6 +6,8 @@ import {EventRequest, EventRequestDocument} from "../event/schema/event-req.sche
 import {Event, EventDocument} from "../event/schema/event.schema";
 import {FindMyRewardResponseDto} from "./dto/response/find-my-reward.response.dto";
 import {EventWinner, EventWinnerDocument} from "../event/schema/event-winner.schema";
+import {FindMyInviteCodeResponseDto} from "./dto/response/find-my-invite-code.response.dto";
+import {User, UserDocument} from "./schema/user.schema";
 
 @Injectable()
 export class UserService {
@@ -13,6 +15,7 @@ export class UserService {
         @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
         @InjectModel(EventRequest.name) private readonly eventReqModel: Model<EventRequestDocument>,
         @InjectModel(EventWinner.name) private readonly eventWinnerModel: Model<EventWinnerDocument>,
+        @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -64,5 +67,18 @@ export class UserService {
         // eventId만 반환됨
         return FindMyRewardResponseDto.empty(eventId);
     }
+
+    /**
+     * 나의 친구초대 코드 조회
+     * @param userId
+     */
+    async getMyInviteCode(userId: string): Promise<FindMyInviteCodeResponseDto> {
+        const user = await this.userModel.findById(userId).lean();
+        if (!user || !user.recommendCode) {
+            throw new NotFoundException('초대 코드를 찾을 수 없습니다.');
+        }
+        return FindMyInviteCodeResponseDto.from(user.recommendCode);
+    }
+
 
 }
