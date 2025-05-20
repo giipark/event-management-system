@@ -20,6 +20,10 @@ import {FindEventParticipantsRequestDto} from "./dto/request/find-event-particip
 import {FindEventWinnersRequestDto} from "./dto/request/find-event-winners.request.dto";
 import {FindEventWinnersResponseDto} from "./dto/response/find-event-winners.response.dto";
 import {EventWinner, EventWinnerDocument} from "./schema/event-winner.schema";
+import {RewardStatus} from "./schema/const/reward-status.enum";
+import {RewardType} from "./schema/const/reward-type.enum";
+import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
+import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
 
 @Injectable()
 export class EventService {
@@ -28,6 +32,7 @@ export class EventService {
         @InjectModel(EventBenefit.name) private eventBenefitModel: Model<EventBenefitDocument>,
         @InjectModel(EventRequest.name) private eventReqModel: Model<EventRequestDocument>,
         @InjectModel(EventWinner.name) private eventWinnerModel: Model<EventWinnerDocument>,
+        @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -227,13 +232,67 @@ export class EventService {
         const winners = await this.eventWinnerModel
             .find(condition)
             .populate('userId', 'email')
-            .sort({ wonAt: -1 })
+            .sort({wonAt: -1})
             .lean();
 
         return FindEventWinnersResponseDto.fromList(
-            winners.map(w => ({ ...w, user: w.userId }))
+            winners.map(w => ({...w, user: w.userId}))
         );
     }
 
+    /**
+     * 당첨 보상 지급 완료 처리
+     * @param eventWinnerIds
+     */
+    async completeRewards(eventWinnerIds: string[]): Promise<CompleteRewardResponseDto> {
+        const session = await this.connection.startSession(); // this.connection = InjectConnection()
+        session.startTransaction();
+
+        let updatedCount = 0;
+
+        try {
+            for (const id of eventWinnerIds) {
+                const winner = await this.eventWinnerModel
+                    .findOne({_id: id, status: RewardStatus.WAITING})
+                    .lean();
+
+                if (!winner) continue;
+
+                const updateResult = await this.eventWinnerModel.updateOne(
+                    {_id: id},
+                    {$set: {status: RewardStatus.COMPLETED}},
+                );
+
+                if (updateResult.modifiedCount === 0) continue;
+
+                // 보상 인벤토리에 반영
+                const update: any = {};
+                const {userId, rewardType, rewardValue} = winner;
+
+                if (rewardType === RewardType.POINT) {
+                    update.$inc = {point: parseInt(rewardValue, 10)};
+                } else if (rewardType === RewardType.COUPON) {
+                    update.$push = {coupons: rewardValue};
+                } else if (rewardType === RewardType.ITEM) {
+                    update.$push = {items: rewardValue};
+                }
+
+                await this.inventoryModel.updateOne(
+                    {userId},
+                    update,
+                    {upsert: true},
+                );
+
+                updatedCount++;
+            }
+
+            return CompleteRewardResponseDto.from(updatedCount);
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            await session.endSession();
+        }
+    }
 
 }

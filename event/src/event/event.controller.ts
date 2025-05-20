@@ -19,6 +19,8 @@ import {FindEventParticipantsResponseDto} from "./dto/response/find-event-partic
 import {FindEventParticipantsRequestDto} from "./dto/request/find-event-participants.request.dto";
 import {FindEventWinnersResponseDto} from "./dto/response/find-event-winners.response.dto";
 import {FindEventWinnersRequestDto} from "./dto/request/find-event-winners.request.dto";
+import {CompleteRewardRequestDto} from "./dto/request/complete-reward.request.dto";
+import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -110,6 +112,17 @@ export class EventController {
         @Query() query: FindEventWinnersRequestDto,
     ): Promise<FindEventWinnersResponseDto[]> {
         return this.eventService.findEventWinners(query);
+    }
+
+    @Patch('event/reward/complete')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Role(RoleType.ADMIN)
+    @ApiName({ summary: '당첨 보상 지급 완료 처리' })
+    @ApiResponse({ status: 200, type: CompleteRewardResponseDto})
+    async completeRewards(
+        @Body() dto: CompleteRewardRequestDto,
+    ): Promise<CompleteRewardResponseDto> {
+        return this.eventService.completeRewards(dto.eventWinnerIds);
     }
 
 }
