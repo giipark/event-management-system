@@ -25,11 +25,16 @@ import {CancelRewardRequestDto} from "./dto/request/cancel-reward.request.dto";
 import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
 import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.response.dto";
 import {RegisterInviteCodeRequestDto} from "./dto/request/register-invite-code.request.dto";
+import {FindInviteUsedUsersResponseDto} from "../user/dto/response/find-invite-used-users.response.dto";
+import {UserService} from "../user/user.service";
 
 @Controller('event')
 @ApiBearerAuth()
 export class EventController {
-    constructor(private readonly eventService: EventService) {
+    constructor(
+        private readonly eventService: EventService,
+        private readonly userService: UserService,
+    ) {
     }
 
     @Post()
@@ -144,8 +149,8 @@ export class EventController {
 
     @Get(':id/announcement')
     @UseGuards(JwtAuthGuard)
-    @ApiName({ summary: '이벤트 당첨자 발표 조회' })
-    @ApiResponse({ status: 200, type: [FindEventAnnouncementResponseDto] })
+    @ApiName({summary: '이벤트 당첨자 발표 조회'})
+    @ApiResponse({status: 200, type: [FindEventAnnouncementResponseDto]})
     async getEventAnnouncement(
         @Param('id') eventId: string,
     ): Promise<FindEventAnnouncementResponseDto[]> {
@@ -154,15 +159,15 @@ export class EventController {
 
     @Get('ended')
     @UseGuards(JwtAuthGuard)
-    @ApiName({ summary: '종료된 이벤트 목록 조회' })
-    @ApiResponse({ status: 200, type: [FindEndedEventsResponseDto] })
+    @ApiName({summary: '종료된 이벤트 목록 조회'})
+    @ApiResponse({status: 200, type: [FindEndedEventsResponseDto]})
     async getEndedEvents(@Req() req: any): Promise<FindEndedEventsResponseDto[]> {
         return this.eventService.findEndedEvents(req.user.role);
     }
 
     @Post(':id/invite-code')
     @UseGuards(JwtAuthGuard)
-    @ApiName({ summary: '이벤트 친구초대형 초대코드 등록' })
+    @ApiName({summary: '이벤트 친구초대형 초대코드 등록'})
     @ApiBody({type: RegisterInviteCodeRequestDto, description: '사용 할 초대코드'})
     @ApiResponse({status: 201, type: Boolean, description: '이벤트 참여 성공'})
     async registerInviteCode(
@@ -173,5 +178,13 @@ export class EventController {
         return this.eventService.registerInviteCode(req.user._id, eventId, dto.usedInviteCode);
     }
 
+    @Get('invite-code/users')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiName({summary: '나의 초대코드를 사용한 유저 목록 조회'})
+    @ApiResponse({status: 200, type: [FindInviteUsedUsersResponseDto]})
+    async getMyInviteUsers(@Req() req: any): Promise<FindInviteUsedUsersResponseDto[]> {
+        return this.userService.getMyInviteUsers(req.user._id);
+    }
 
 }

@@ -8,6 +8,7 @@ import {FindMyRewardResponseDto} from "./dto/response/find-my-reward.response.dt
 import {EventWinner, EventWinnerDocument} from "../event/schema/event-winner.schema";
 import {FindMyInviteCodeResponseDto} from "./dto/response/find-my-invite-code.response.dto";
 import {User, UserDocument} from "./schema/user.schema";
+import {FindInviteUsedUsersResponseDto} from "./dto/response/find-invite-used-users.response.dto";
 
 @Injectable()
 export class UserService {
@@ -26,12 +27,12 @@ export class UserService {
      */
     async findMyEvents(userId: string): Promise<FindMyEventsResponseDto[]> {
         // 참여한 이벤트 ID 중복제거 조회
-        const eventIds = await this.eventReqModel.distinct('eventId', { userId });
+        const eventIds = await this.eventReqModel.distinct('eventId', {userId});
 
         // 해당 이벤트 정보 조회
         const events = await this.eventModel
-            .find({ _id: { $in: eventIds } })
-            .sort({ startAt: -1 })
+            .find({_id: {$in: eventIds}})
+            .sort({startAt: -1})
             .lean();
 
         return FindMyEventsResponseDto.fromList(events);
@@ -78,6 +79,28 @@ export class UserService {
             throw new NotFoundException('초대 코드를 찾을 수 없습니다.');
         }
         return FindMyInviteCodeResponseDto.from(user.recommendCode);
+    }
+
+    /**
+     * 나의 초대코드를 사용한 유저 목록 조회
+     * @param userId
+     */
+    async getMyInviteUsers(userId: string): Promise<FindInviteUsedUsersResponseDto[]> {
+        const user = await this.userModel.findById(userId).lean();
+        if (!user?.recommendCode) throw new NotFoundException('추천 코드가 존재하지 않습니다.');
+
+        const requests = await this.eventReqModel
+            .find({usedInviteCode: user.recommendCode})
+            .populate('userId', 'email') // 초대한 유저 정보
+            .sort({joinedAt: -1})
+            .lean();
+
+        const invites = requests.map((r) => ({
+            ...r,
+            user: r.userId,
+        }));
+
+        return FindInviteUsedUsersResponseDto.fromList(invites);
     }
 
 

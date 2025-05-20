@@ -9,6 +9,7 @@ import {EventWinner, EventWinnerSchema} from "./schema/event-winner.schema";
 import {Inventory, InventorySchema} from "../user/schema/inventory.schema";
 import {RewardCancelLog, RewardCancelLogSchema} from "./schema/reward-cancel-log.schema";
 import {User, UserSchema} from "../user/schema/user.schema";
+import {UserModule} from "../user/user.module";
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import {User, UserSchema} from "../user/schema/user.schema";
             {name: RewardCancelLog.name, schema: RewardCancelLogSchema},
             {name: User.name, schema: UserSchema},
         ]),
+        UserModule,
     ],
     controllers: [EventController],
     providers: [EventService]
