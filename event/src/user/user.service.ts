@@ -1,6 +1,6 @@
 import {Injectable, NotFoundException} from '@nestjs/common';
-import {InjectConnection, InjectModel} from '@nestjs/mongoose';
-import {Connection, Model} from 'mongoose';
+import {InjectModel} from '@nestjs/mongoose';
+import {Model} from 'mongoose';
 import {FindMyEventsResponseDto} from './dto/response/find-my-events.response.dto';
 import {EventRequest, EventRequestDocument} from "../event/schema/event-req.schema";
 import {Event, EventDocument} from "../event/schema/event.schema";
@@ -17,7 +17,6 @@ export class UserService {
         @InjectModel(EventRequest.name) private eventReqModel: Model<EventRequestDocument>,
         @InjectModel(EventWinner.name) private eventWinnerModel: Model<EventWinnerDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>,
-        @InjectConnection() private connection: Connection,
     ) {
     }
 

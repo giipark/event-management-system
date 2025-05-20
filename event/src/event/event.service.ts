@@ -1,6 +1,6 @@
 import {BadRequestException, ConflictException, Injectable, NotFoundException} from '@nestjs/common';
-import {InjectConnection, InjectModel} from "@nestjs/mongoose";
-import {ClientSession, Connection, Model, Types} from "mongoose";
+import {InjectModel} from "@nestjs/mongoose";
+import {ClientSession, Model, Types} from "mongoose";
 import {Event, EventDocument} from "./schema/event.schema";
 import {EventBenefit, EventBenefitDocument} from "./schema/event-bnef.schema";
 import {CreateEventRequestDto} from "./dto/request/create-event.request.dto";
@@ -41,7 +41,6 @@ export class EventService {
         @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
         @InjectModel(RewardCancelLog.name) private rewardCancelLogModel: Model<RewardCancelLogDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>,
-        @InjectConnection() private readonly connection: Connection,
     ) {
     }
 
@@ -51,38 +50,26 @@ export class EventService {
      * @param id
      */
     async createEvent(dto: CreateEventRequestDto, id: string): Promise<CreateEventResponseDto> {
-        const session: ClientSession = await this.connection.startSession();
-        session.startTransaction();
+        // 이벤트 등록
+        const event = new this.eventModel({
+            ...dto,
+            createdBy: id,
+            updatedBy: id,
+        });
+        const savedEvent = await event.save();
 
-        try {
-            // 이벤트 등록
-            const event = new this.eventModel({
-                ...dto,
+        // 이벤트 보상목록 등록
+        if (dto.benefits && dto.benefits.length > 0) {
+            const benefits = dto.benefits.map(b => ({
+                ...b,
+                eventId: savedEvent._id,
                 createdBy: id,
                 updatedBy: id,
-            });
-            const savedEvent = await event.save();
-
-            // 이벤트 보상목록 등록
-            if (dto.benefits && dto.benefits.length > 0) {
-                const benefits = dto.benefits.map(b => ({
-                    ...b,
-                    eventId: savedEvent._id,
-                    createdBy: id,
-                    updatedBy: id,
-                }));
-                await this.eventBenefitModel.insertMany(benefits);
-            }
-
-            await session.commitTransaction();
-            await session.endSession();
-
-            return CreateEventResponseDto.from(savedEvent);
-        } catch (err) {
-            await session.abortTransaction();
-            await session.endSession();
-            throw err;
+            }));
+            await this.eventBenefitModel.insertMany(benefits);
         }
+
+        return CreateEventResponseDto.from(savedEvent);
     }
 
     /**
@@ -253,54 +240,44 @@ export class EventService {
      * @param eventWinnerIds
      */
     async completeRewards(eventWinnerIds: string[]): Promise<CompleteRewardResponseDto> {
-        const session = await this.connection.startSession(); // this.connection = InjectConnection()
-        session.startTransaction();
-
         let updatedCount = 0;
 
-        try {
-            for (const id of eventWinnerIds) {
-                const winner = await this.eventWinnerModel
-                    .findOne({_id: id, status: RewardStatus.WAITING})
-                    .lean();
+        for (const id of eventWinnerIds) {
+            const winner = await this.eventWinnerModel
+                .findOne({_id: id, status: RewardStatus.WAITING})
+                .lean();
 
-                if (!winner) continue;
+            if (!winner) continue;
 
-                const updateResult = await this.eventWinnerModel.updateOne(
-                    {_id: id},
-                    {$set: {status: RewardStatus.COMPLETED}},
-                );
+            const updateResult = await this.eventWinnerModel.updateOne(
+                {_id: id},
+                {$set: {status: RewardStatus.COMPLETED}},
+            );
 
-                if (updateResult.modifiedCount === 0) continue;
+            if (updateResult.modifiedCount === 0) continue;
 
-                // 보상 인벤토리에 반영
-                const update: any = {};
-                const {userId, rewardType, rewardValue} = winner;
+            // 보상 인벤토리에 반영
+            const update: any = {};
+            const {userId, rewardType, rewardValue} = winner;
 
-                if (rewardType === RewardType.POINT) {
-                    update.$inc = {point: parseInt(rewardValue, 10)};
-                } else if (rewardType === RewardType.COUPON) {
-                    update.$push = {coupons: rewardValue};
-                } else if (rewardType === RewardType.ITEM) {
-                    update.$push = {items: rewardValue};
-                }
-
-                await this.inventoryModel.updateOne(
-                    {userId},
-                    update,
-                    {upsert: true},
-                );
-
-                updatedCount++;
+            if (rewardType === RewardType.POINT) {
+                update.$inc = {point: parseInt(rewardValue, 10)};
+            } else if (rewardType === RewardType.COUPON) {
+                update.$push = {coupons: rewardValue};
+            } else if (rewardType === RewardType.ITEM) {
+                update.$push = {items: rewardValue};
             }
 
-            return CompleteRewardResponseDto.from(updatedCount);
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            await session.endSession();
+            await this.inventoryModel.updateOne(
+                {userId},
+                update,
+                {upsert: true},
+            );
+
+            updatedCount++;
         }
+
+        return CompleteRewardResponseDto.from(updatedCount);
     }
 
     /**
@@ -314,41 +291,29 @@ export class EventService {
         reason: string,
         adminUserId: string,
     ): Promise<{ cancelled: boolean }> {
-        const session = await this.connection.startSession();
-        session.startTransaction();
+        // 이미 지급 되었다면 (COMPLETED) 취소 불가
+        // TODO: 추후 지급된 보상을 철회시킬 CS 처리 필요
+        const winner = await this.eventWinnerModel.findOne({
+            _id: eventWinnerId,
+            status: RewardStatus.WAITING,
+        });
 
-        try {
-            // 이미 지급 되었다면 (COMPLETED) 취소 불가
-            // TODO: 추후 지급된 보상을 철회시킬 CS 처리 필요
-            const winner = await this.eventWinnerModel.findOne({
-                _id: eventWinnerId,
-                status: RewardStatus.WAITING,
-            }).session(session);
+        if (!winner) throw new NotFoundException('취소 가능한 당첨 정보를 찾을 수 없습니다.');
 
-            if (!winner) throw new NotFoundException('취소 가능한 당첨 정보를 찾을 수 없습니다.');
+        // 상태를 취소상태(CANCELLED)로 변경
+        await this.eventWinnerModel.updateOne(
+            {_id: eventWinnerId},
+            {$set: {status: RewardStatus.CANCELLED}}
+        );
 
-            // 상태를 취소상태(CANCELLED)로 변경
-            await this.eventWinnerModel.updateOne(
-                {_id: eventWinnerId},
-                {$set: {status: RewardStatus.CANCELLED}},
-                {session}
-            );
+        // 보상취소 로그 저장
+        await this.rewardCancelLogModel.create([{
+            eventWinnerId: winner._id,
+            cancelledBy: adminUserId,
+            reason,
+        }]);
 
-            // 보상취소 로그 저장
-            await this.rewardCancelLogModel.create([{
-                eventWinnerId: winner._id,
-                cancelledBy: adminUserId,
-                reason,
-            }], {session});
-
-            await session.commitTransaction();
-            return {cancelled: true};
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            await session.endSession();
-        }
+        return {cancelled: true};
     }
 
     /**
@@ -392,82 +357,72 @@ export class EventService {
      * @param usedInviteCode
      */
     async registerInviteCode(userId: string, eventId: string, usedInviteCode: string): Promise<{ success: boolean }> {
-        const session: ClientSession = await this.connection.startSession();
-        session.startTransaction();
-
-        try {
-            // 이벤트 정보 조회
-            const event = await this.eventModel.findById(eventId).lean();
-            if (!event || event.type !== EventType.INVITE) {
-                throw new BadRequestException('친구초대 이벤트가 아닙니다.')
-            }
-
-            // 나의 코드 조회 (자기 자신 코드 방지용)
-            const user = await this.userModel.findById(userId).lean();
-            if (!user?.recommendCode) throw new BadRequestException('유저 초대 코드가 존재하지 않습니다.');
-
-            // 자기 자신의 코드 사용 금지
-            if (user.recommendCode === usedInviteCode) {
-                throw new BadRequestException('자기 자신의 초대코드는 사용할 수 없습니다.');
-            }
-
-            // 이미 참여했는지 체크
-            const hasInvitedBefore = await this.eventReqModel.exists({
-                userId,
-                usedInviteCode: {$ne: null},
-            });
-            if (hasInvitedBefore) {
-                throw new ConflictException('이미 친구초대형 이벤트에 참여하셨습니다.');
-            }
-
-            // 초대코드가 유효한 코드인지 체크
-            const inviter = await this.userModel.findOne({recommendCode: usedInviteCode}).lean();
-            if (!inviter) {
-                throw new BadRequestException('유효하지 않은 초대 코드입니다.');
-            }
-
-            // 내가 가진 초대코드를 inviter가 사용한 적 있는지 체크
-            const mutal = await this.eventReqModel.exists({
-                userId: inviter._id,
-                usedInviteCode: user.recommendCode, // 내 코드
-            });
-            if (mutal) {
-                throw new ConflictException('상호간의 초대는 허용되지 않습니다.');
-            }
-
-            await this.eventReqModel.create({
-                userId,
-                eventId,
-                usedInviteCode,
-                joinedAt: new Date(),
-            });
-
-            // 보상 정보 조회
-            const benefit = await this.eventBenefitModel.findOne({eventId}).lean();
-            if (!benefit) throw new NotFoundException('이벤트 보상 정보가 없습니다.');
-
-            const {rewardType, rewardValue} = benefit;
-
-            // 보상 지급
-            await this.inventoryModel.updateOne(
-                {userId}, // 자기 자신
-                getRewardUpdate(rewardType, rewardValue),
-                {upsert: true, session}
-            );
-
-            await this.inventoryModel.updateOne(
-                {userId: inviter._id}, // 초대한 사람
-                getRewardUpdate(rewardType, rewardValue),
-                {upsert: true, session}
-            );
-
-            return {success: true};
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            await session.endSession();
+        // 이벤트 정보 조회
+        const event = await this.eventModel.findById(eventId).lean();
+        if (!event || event.type !== EventType.INVITE) {
+            throw new BadRequestException('친구초대 이벤트가 아닙니다.')
         }
+
+        // 나의 코드 조회 (자기 자신 코드 방지용)
+        const user = await this.userModel.findById(userId).lean();
+        if (!user?.recommendCode) throw new BadRequestException('유저 초대 코드가 존재하지 않습니다.');
+
+        // 자기 자신의 코드 사용 금지
+        if (user.recommendCode === usedInviteCode) {
+            throw new BadRequestException('자기 자신의 초대코드는 사용할 수 없습니다.');
+        }
+
+        // 이미 참여했는지 체크
+        const hasInvitedBefore = await this.eventReqModel.exists({
+            userId,
+            usedInviteCode: {$ne: null},
+        });
+        if (hasInvitedBefore) {
+            throw new ConflictException('이미 친구초대형 이벤트에 참여하셨습니다.');
+        }
+
+        // 초대코드가 유효한 코드인지 체크
+        const inviter = await this.userModel.findOne({recommendCode: usedInviteCode}).lean();
+        if (!inviter) {
+            throw new BadRequestException('유효하지 않은 초대 코드입니다.');
+        }
+
+        // 내가 가진 초대코드를 inviter가 사용한 적 있는지 체크
+        const mutal = await this.eventReqModel.exists({
+            userId: inviter._id,
+            usedInviteCode: user.recommendCode, // 내 코드
+        });
+        if (mutal) {
+            throw new ConflictException('상호간의 초대는 허용되지 않습니다.');
+        }
+
+        await this.eventReqModel.create({
+            userId,
+            eventId,
+            usedInviteCode,
+            joinedAt: new Date(),
+        });
+
+        // 보상 정보 조회
+        const benefit = await this.eventBenefitModel.findOne({eventId}).lean();
+        if (!benefit) throw new NotFoundException('이벤트 보상 정보가 없습니다.');
+
+        const {rewardType, rewardValue} = benefit;
+
+        // 보상 지급
+        await this.inventoryModel.updateOne(
+            {userId}, // 자기 자신
+            getRewardUpdate(rewardType, rewardValue),
+            {upsert: true}
+        );
+
+        await this.inventoryModel.updateOne(
+            {userId: inviter._id}, // 초대한 사람
+            getRewardUpdate(rewardType, rewardValue),
+            {upsert: true}
+        );
+
+        return {success: true};
     }
 
     /**
@@ -476,58 +431,48 @@ export class EventService {
      * @param eventId
      */
     async requestAlertReward(userId: string, eventId: string): Promise<{ success: boolean }> {
-        const session: ClientSession = await this.connection.startSession();
-        session.startTransaction();
+        const event = await this.eventModel.findById(eventId).lean();
+        if (!event) throw new NotFoundException('이벤트를 찾을 수 없습니다.');
 
-        try {
-            const event = await this.eventModel.findById(eventId).lean();
-            if (!event) throw new NotFoundException('이벤트를 찾을 수 없습니다.');
-
-            // 이벤트 유형 체크
-            if (event.type !== EventType.ANNOUNCE) {
-                throw new BadRequestException('안내형 이벤트가 아닙니다.');
-            }
-
-            // 중복 요청 방지
-            const exists = await this.eventReqModel.exists({userId, eventId});
-            if (exists) {
-                throw new ConflictException('이미 보상을 요청하셨습니다.');
-            }
-
-            // 보상 정보 조회
-            const benefit = await this.eventBenefitModel.findOne({eventId}).lean();
-            if (!benefit) throw new NotFoundException('보상 정보가 없습니다.');
-
-            const eventReq = await this.eventReqModel.create({
-                userId,
-                eventId,
-                joinedAt: new Date(),
-            });
-
-            await this.eventWinnerModel.create({
-                userId,
-                eventId,
-                eventReqId: eventReq._id, // 위에서 생성된 참여 ID
-                rewardType: benefit.rewardType,
-                rewardValue: benefit.rewardValue,
-                status: RewardStatus.COMPLETED,
-                wonAt: new Date(),
-            });
-
-            // 보상 지급
-            await this.inventoryModel.updateOne(
-                {userId},
-                getRewardUpdate(benefit.rewardType, benefit.rewardValue),
-                {upsert: true, session}
-            );
-
-            return {success: true};
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            await session.endSession();
+        // 이벤트 유형 체크
+        if (event.type !== EventType.ANNOUNCE) {
+            throw new BadRequestException('안내형 이벤트가 아닙니다.');
         }
+
+        // 중복 요청 방지
+        const exists = await this.eventReqModel.exists({userId, eventId});
+        if (exists) {
+            throw new ConflictException('이미 보상을 요청하셨습니다.');
+        }
+
+        // 보상 정보 조회
+        const benefit = await this.eventBenefitModel.findOne({eventId}).lean();
+        if (!benefit) throw new NotFoundException('보상 정보가 없습니다.');
+
+        const eventReq = await this.eventReqModel.create({
+            userId,
+            eventId,
+            joinedAt: new Date(),
+        });
+
+        await this.eventWinnerModel.create({
+            userId,
+            eventId,
+            eventReqId: eventReq._id, // 위에서 생성된 참여 ID
+            rewardType: benefit.rewardType,
+            rewardValue: benefit.rewardValue,
+            status: RewardStatus.COMPLETED,
+            wonAt: new Date(),
+        });
+
+        // 보상 지급
+        await this.inventoryModel.updateOne(
+            {userId},
+            getRewardUpdate(benefit.rewardType, benefit.rewardValue),
+            {upsert: true}
+        );
+
+        return {success: true};
     }
 
 }
