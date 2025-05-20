@@ -7,6 +7,7 @@ import {EventBenefit, EventBenefitSchema} from "./schema/event-bnef.schema";
 import {EventRequest, EventRequestSchema} from "./schema/event-req.schema";
 import {EventWinner, EventWinnerSchema} from "./schema/event-winner.schema";
 import {Inventory, InventorySchema} from "../user/schema/inventory.schema";
+import {RewardCancelLog, RewardCancelLogSchema} from "./schema/reward-cancel-log.schema";
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import {Inventory, InventorySchema} from "../user/schema/inventory.schema";
             {name: EventRequest.name, schema: EventRequestSchema},
             {name: EventWinner.name, schema: EventWinnerSchema},
             {name: Inventory.name, schema: InventorySchema},
+            {name: RewardCancelLog.name, schema: RewardCancelLogSchema},
         ]),
     ],
     controllers: [EventController],

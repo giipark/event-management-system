@@ -24,6 +24,7 @@ import {RewardStatus} from "./schema/const/reward-status.enum";
 import {RewardType} from "./schema/const/reward-type.enum";
 import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
 import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
+import {RewardCancelLog, RewardCancelLogDocument} from "./schema/reward-cancel-log.schema";
 
 @Injectable()
 export class EventService {
@@ -33,6 +34,7 @@ export class EventService {
         @InjectModel(EventRequest.name) private eventReqModel: Model<EventRequestDocument>,
         @InjectModel(EventWinner.name) private eventWinnerModel: Model<EventWinnerDocument>,
         @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
+        @InjectModel(RewardCancelLog.name) private rewardCancelLogModel: Model<RewardCancelLogDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -287,6 +289,54 @@ export class EventService {
             }
 
             return CompleteRewardResponseDto.from(updatedCount);
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            await session.endSession();
+        }
+    }
+
+    /**
+     * 보상 취소 처리
+     * @param eventWinnerId
+     * @param reason
+     * @param adminUserId
+     */
+    async cancelReward(
+        eventWinnerId: string,
+        reason: string,
+        adminUserId: string,
+    ): Promise<{ cancelled: boolean }> {
+        const session = await this.connection.startSession();
+        session.startTransaction();
+
+        try {
+            // 이미 지급 되었다면 (COMPLETED) 취소 불가
+            // TODO: 추후 지급된 보상을 철회시킬 CS 처리 필요
+            const winner = await this.eventWinnerModel.findOne({
+                _id: eventWinnerId,
+                status: RewardStatus.WAITING,
+            }).session(session);
+
+            if (!winner) throw new NotFoundException('취소 가능한 당첨 정보를 찾을 수 없습니다.');
+
+            // 상태를 취소상태(CANCELLED)로 변경
+            await this.eventWinnerModel.updateOne(
+                {_id: eventWinnerId},
+                {$set: {status: RewardStatus.CANCELLED}},
+                {session}
+            );
+
+            // 보상취소 로그 저장
+            await this.rewardCancelLogModel.create([{
+                eventWinnerId: winner._id,
+                cancelledBy: adminUserId,
+                reason,
+            }], {session});
+
+            await session.commitTransaction();
+            return {cancelled: true};
         } catch (err) {
             await session.abortTransaction();
             throw err;

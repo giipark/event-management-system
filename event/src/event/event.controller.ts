@@ -1,11 +1,11 @@
-import {Body, Controller, Get, Param, Patch, Post, Query, Request, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, Get, Param, Patch, Post, Query, Req, Request, UseGuards} from '@nestjs/common';
 import {EventService} from "./event.service";
 import {CreateEventRequestDto} from "./dto/request/create-event.request.dto";
 import {JwtAuthGuard} from "../auth/guards/jwt.guard";
 import {RoleGuard} from "../auth/guards/role.guard";
 import {Role} from "../common/decorate/role.decorator";
 import {ApiName} from "../common/decorate/api-name";
-import {ApiBearerAuth, ApiParam, ApiQuery, ApiResponse} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiQuery, ApiResponse} from "@nestjs/swagger";
 import {CreateEventResponseDto} from "./dto/response/create-event.response.dto";
 import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
 import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
@@ -21,6 +21,7 @@ import {FindEventWinnersResponseDto} from "./dto/response/find-event-winners.res
 import {FindEventWinnersRequestDto} from "./dto/request/find-event-winners.request.dto";
 import {CompleteRewardRequestDto} from "./dto/request/complete-reward.request.dto";
 import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
+import {CancelRewardRequestDto} from "./dto/request/cancel-reward.request.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -117,12 +118,24 @@ export class EventController {
     @Patch('event/reward/complete')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
-    @ApiName({ summary: '당첨 보상 지급 완료 처리' })
-    @ApiResponse({ status: 200, type: CompleteRewardResponseDto})
+    @ApiName({summary: '당첨 보상 지급 완료 처리'})
+    @ApiResponse({status: 200, type: CompleteRewardResponseDto})
     async completeRewards(
         @Body() dto: CompleteRewardRequestDto,
     ): Promise<CompleteRewardResponseDto> {
         return this.eventService.completeRewards(dto.eventWinnerIds);
+    }
+
+    @Patch('event/reward/cancel')
+    @UseGuards(JwtAuthGuard, RoleGuard)
+    @Role(RoleType.ADMIN)
+    @ApiName({summary: '보상 취소 처리'})
+    @ApiResponse({status: 200, description: '취소 성공'})
+    async cancelReward(
+        @Body() dto: CancelRewardRequestDto,
+        @Req() req: any,
+    ): Promise<{ cancelled: boolean }> {
+        return this.eventService.cancelReward(dto.eventWinnerId, dto.reason, req.user._id);
     }
 
 }
