@@ -5,12 +5,7 @@ import axios from 'axios';
 @Injectable()
 export class EventMiddleware implements NestMiddleware {
     // 토큰 인증이 필요없는 예외 경로
-    private readonly publicPaths = [
-        '/api/event', // 전체 이벤트 목록 조회
-        '/api/event/ended', // 종료된 이벤트 목록 조회
-        '/api/event/:id', // 이벤트 상세 조회
-        '/api/event/:id/announcement', // 당첨자 발표 목록 조회
-    ];
+    private readonly publicPaths = [];
 
     async use(req: Request, res: Response, next: NextFunction) {
         const path = req.path;
