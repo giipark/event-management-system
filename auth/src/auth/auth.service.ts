@@ -9,6 +9,7 @@ import {LoginDto} from "./dto/login.dto";
 import {ProfileResponseDto} from "./dto/profile.response.dto";
 import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
 import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
+import {RoleType} from "../user/schema/const/role-type.enum";
 
 @Injectable()
 export class AuthService {
@@ -47,7 +48,7 @@ export class AuthService {
                 password: hashed,
                 nickname,
                 recommendCode,
-                role: 'USER',
+                role: RoleType.USER,
             }], {session});
 
             // 인벤토리 생성
@@ -137,7 +138,7 @@ export class AuthService {
         const user = await this.userModel.findById(_id);
         if (!user) throw new NotFoundException('유저가 존재하지 않습니다.');
 
-        user.role = 'ADMIN';
+        user.role = RoleType.ADMIN;
         await user.save();
 
         return {success: true};

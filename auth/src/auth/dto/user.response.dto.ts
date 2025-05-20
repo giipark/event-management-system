@@ -1,5 +1,6 @@
 import {ApiProperty} from "@nestjs/swagger";
 import {Exclude, Expose} from "class-transformer";
+import {RoleType} from "../../user/schema/const/role-type.enum";
 
 export class UserResponseDto {
     @ApiProperty({
@@ -24,12 +25,12 @@ export class UserResponseDto {
     nickname: string;
 
     @ApiProperty({
-        example: 'USER',
+        example: RoleType.USER,
         description: '사용자 역할 (USER 또는 ADMIN)',
-        enum: ['USER', 'ADMIN'],
+        enum: RoleType,
     })
     @Expose()
-    role: 'USER' | 'ADMIN';
+    role: RoleType;
 
     @ApiProperty({
         example: 'X69QMA',
