@@ -58,7 +58,7 @@ export class EventController {
         return this.eventService.updateEvent(id, dto, adminId);
     }
 
-    @Post('event/:id/benefit')
+    @Post(':id/benefit')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 보상 추가'})
@@ -70,7 +70,7 @@ export class EventController {
         return this.eventService.addBenefitToEvent(eventId, dtoList);
     }
 
-    @Get('event')
+    @Get()
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '이벤트 목록 조회'})
     @ApiResponse({status: 200, description: '이벤트 목록 반환', type: [FindEventResponseDto]})
@@ -81,7 +81,7 @@ export class EventController {
         return this.eventService.findEventList(query, req.user.role);
     }
 
-    @Get('event/:id')
+    @Get(':id')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '이벤트 상세 조회'})
     @ApiResponse({status: 200, type: FindEventDetailResponseDto})
@@ -93,7 +93,7 @@ export class EventController {
         return this.eventService.findEventDetail(id, req.user.role);
     }
 
-    @Get('event/:id/participants')
+    @Get(':id/participants')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 응모자 목록 조회'})
@@ -105,7 +105,7 @@ export class EventController {
         return this.eventService.findEventParticipants(query);
     }
 
-    @Get('event/winners')
+    @Get('winners')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 당첨자 목록 조회'})
@@ -116,7 +116,7 @@ export class EventController {
         return this.eventService.findEventWinners(query);
     }
 
-    @Patch('event/reward/complete')
+    @Patch('reward/complete')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '당첨 보상 지급 완료 처리'})
@@ -127,7 +127,7 @@ export class EventController {
         return this.eventService.completeRewards(dto.eventWinnerIds);
     }
 
-    @Patch('event/reward/cancel')
+    @Patch('reward/cancel')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '보상 취소 처리'})
@@ -140,7 +140,7 @@ export class EventController {
         return this.eventService.cancelReward(dto.eventWinnerId, dto.reason, req.user._id);
     }
 
-    @Get('event/:id/announcement')
+    @Get(':id/announcement')
     @ApiName({ summary: '이벤트 당첨자 발표 조회' })
     @ApiResponse({ status: 200, type: [FindEventAnnouncementResponseDto] })
     async getEventAnnouncement(
