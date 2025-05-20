@@ -135,6 +135,7 @@ export class EventController {
         @Body() dto: CancelRewardRequestDto,
         @Req() req: any,
     ): Promise<{ cancelled: boolean }> {
+        // TODO: 현재 단건 취소 -> 복수건으로 취소 가능하게 변경 필요
         return this.eventService.cancelReward(dto.eventWinnerId, dto.reason, req.user._id);
     }
 
