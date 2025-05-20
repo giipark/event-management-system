@@ -7,6 +7,7 @@ import {EventRequest, EventRequestSchema} from "../event/schema/event-req.schema
 import {Inventory, InventorySchema} from "./schema/inventory.schema";
 import {EventWinner, EventWinnerSchema} from "../event/schema/event-winner.schema";
 import {User, UserSchema} from "./schema/user.schema";
+import {JwtStrategy} from "../auth/strategies/jwt.strategy";
 
 @Module({
     imports: [
@@ -19,7 +20,7 @@ import {User, UserSchema} from "./schema/user.schema";
         ]),
     ],
     controllers: [UserController],
-    providers: [UserService],
+    providers: [UserService, JwtStrategy],
     exports: [UserService],
 })
 export class UserModule {

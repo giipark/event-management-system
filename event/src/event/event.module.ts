@@ -10,6 +10,7 @@ import {Inventory, InventorySchema} from "../user/schema/inventory.schema";
 import {RewardCancelLog, RewardCancelLogSchema} from "./schema/reward-cancel-log.schema";
 import {User, UserSchema} from "../user/schema/user.schema";
 import {UserModule} from "../user/user.module";
+import {JwtStrategy} from "../auth/strategies/jwt.strategy";
 
 @Module({
     imports: [
@@ -25,7 +26,7 @@ import {UserModule} from "../user/user.module";
         UserModule,
     ],
     controllers: [EventController],
-    providers: [EventService]
+    providers: [EventService, JwtStrategy]
 })
 export class EventModule {
 }
