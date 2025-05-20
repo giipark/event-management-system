@@ -2,6 +2,8 @@ import {Module} from '@nestjs/common';
 import {EventModule} from './event/event.module';
 import {MongooseModule} from "@nestjs/mongoose";
 import {ConfigModule} from "@nestjs/config";
+import {UserController} from './user/user.controller';
+import {UserModule} from './user/user.module';
 
 @Module({
     imports: [
@@ -9,7 +11,8 @@ import {ConfigModule} from "@nestjs/config";
             isGlobal: true,
         }),
         MongooseModule.forRoot(process.env.MONGO_DB),
-        EventModule
+        EventModule,
+        UserModule
     ],
     controllers: [],
     providers: [],
