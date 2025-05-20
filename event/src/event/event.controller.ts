@@ -22,6 +22,7 @@ import {FindEventWinnersRequestDto} from "./dto/request/find-event-winners.reque
 import {CompleteRewardRequestDto} from "./dto/request/complete-reward.request.dto";
 import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
 import {CancelRewardRequestDto} from "./dto/request/cancel-reward.request.dto";
+import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -137,6 +138,15 @@ export class EventController {
     ): Promise<{ cancelled: boolean }> {
         // TODO: 현재 단건 취소 -> 복수건으로 취소 가능하게 변경 필요
         return this.eventService.cancelReward(dto.eventWinnerId, dto.reason, req.user._id);
+    }
+
+    @Get('event/:id/announcement')
+    @ApiName({ summary: '이벤트 당첨자 발표 조회' })
+    @ApiResponse({ status: 200, type: [FindEventAnnouncementResponseDto] })
+    async getEventAnnouncement(
+        @Param('id') eventId: string,
+    ): Promise<FindEventAnnouncementResponseDto[]> {
+        return this.eventService.findEventAnnouncement(eventId);
     }
 
 }

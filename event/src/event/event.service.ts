@@ -25,6 +25,7 @@ import {RewardType} from "./schema/const/reward-type.enum";
 import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
 import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
 import {RewardCancelLog, RewardCancelLogDocument} from "./schema/reward-cancel-log.schema";
+import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
 
 @Injectable()
 export class EventService {
@@ -344,5 +345,21 @@ export class EventService {
             await session.endSession();
         }
     }
+
+    /**
+     * 이벤트 당첨자 발표 조회
+     * @param eventId
+     */
+    async findEventAnnouncement(eventId: string): Promise<FindEventAnnouncementResponseDto[]> {
+        const winners = await this.eventWinnerModel
+            .find({ eventId, status: RewardStatus.COMPLETED })
+            .populate('userId', 'email')
+            .lean();
+
+        const entities = winners.map(w => ({ ...w, user: w.userId }));
+
+        return FindEventAnnouncementResponseDto.fromList(entities);
+    }
+
 
 }
