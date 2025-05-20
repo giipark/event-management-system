@@ -12,11 +12,11 @@ import {User, UserDocument} from "./schema/user.schema";
 @Injectable()
 export class UserService {
     constructor(
-        @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
-        @InjectModel(EventRequest.name) private readonly eventReqModel: Model<EventRequestDocument>,
-        @InjectModel(EventWinner.name) private readonly eventWinnerModel: Model<EventWinnerDocument>,
-        @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-        @InjectConnection() private readonly connection: Connection,
+        @InjectModel(Event.name) private eventModel: Model<EventDocument>,
+        @InjectModel(EventRequest.name) private eventReqModel: Model<EventRequestDocument>,
+        @InjectModel(EventWinner.name) private eventWinnerModel: Model<EventWinnerDocument>,
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectConnection() private connection: Connection,
     ) {
     }
 
