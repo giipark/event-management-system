@@ -29,6 +29,7 @@ import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announ
 import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.response.dto";
 import {User, UserDocument} from "../user/schema/user.schema";
 import {getRewardUpdate} from "../common/utils/util";
+import {EventType} from "./schema/const/event-type.enum";
 
 @Injectable()
 export class EventService {
@@ -395,6 +396,13 @@ export class EventService {
         session.startTransaction();
 
         try {
+            // 이벤트 정보 조회
+            const event = await this.eventModel.findById(eventId).lean();
+            if (!event || event.type !== EventType.INVITE) {
+                throw new BadRequestException('친구초대 이벤트가 아닙니다.')
+            }
+
+            // 나의 코드 조회 (자기 자신 코드 방지용)
             const user = await this.userModel.findById(userId).lean();
             if (!user?.recommendCode) throw new BadRequestException('유저 초대 코드가 존재하지 않습니다.');
 
