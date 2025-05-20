@@ -1,15 +1,18 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import {InjectConnection, InjectModel} from '@nestjs/mongoose';
 import {Connection, Model} from 'mongoose';
 import {FindMyEventsResponseDto} from './dto/response/find-my-events.response.dto';
 import {EventRequest, EventRequestDocument} from "../event/schema/event-req.schema";
 import {Event, EventDocument} from "../event/schema/event.schema";
+import {FindMyRewardResponseDto} from "./dto/response/find-my-reward.response.dto";
+import {EventWinner, EventWinnerDocument} from "../event/schema/event-winner.schema";
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectModel(Event.name) private readonly eventModel: Model<EventDocument>,
         @InjectModel(EventRequest.name) private readonly eventReqModel: Model<EventRequestDocument>,
+        @InjectModel(EventWinner.name) private readonly eventWinnerModel: Model<EventWinnerDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -30,4 +33,36 @@ export class UserService {
 
         return FindMyEventsResponseDto.fromList(events);
     }
+
+    /**
+     * 나의 이벤트 당첨보상 상세조회
+     * @param userId
+     * @param eventId
+     */
+    async findMyReward(userId: string, eventId: string): Promise<FindMyRewardResponseDto> {
+        // 당첨 여부 조회
+        const winner = await this.eventWinnerModel.findOne({
+            userId,
+            eventId,
+        }).lean();
+
+        if (winner) {
+            return FindMyRewardResponseDto.from(winner);
+        }
+
+        // 응모한 적은 있는지?
+        const request = await this.eventReqModel.findOne({
+            userId,
+            eventId,
+        }).lean();
+
+        if (!request) {
+            throw new NotFoundException('이벤트에 참여한 기록이 없습니다.');
+        }
+
+        // 응모는 했지만 당첨 기록 없음
+        // eventId만 반환됨
+        return FindMyRewardResponseDto.empty(eventId);
+    }
+
 }
