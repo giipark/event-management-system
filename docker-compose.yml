@@ -20,6 +20,8 @@ services:
     build: ./event
     ports:
       - "3002:3002"
+    env_file:
+      - ./event/.env
     depends_on:
       - mongodb
 
