@@ -1,5 +1,5 @@
 import {Controller, Get, Param, Req, UseGuards} from '@nestjs/common';
-import {ApiBearerAuth, ApiResponse} from '@nestjs/swagger';
+import {ApiBearerAuth, ApiParam, ApiResponse} from '@nestjs/swagger';
 import {FindMyEventsResponseDto} from './dto/response/find-my-events.response.dto';
 import {UserService} from './user.service';
 import {ApiName} from "../common/decorate/api-name";
@@ -26,6 +26,7 @@ export class UserController {
     @Get('my/event/:id/reward')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '나의 이벤트 당첨보상 상세조회'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
     @ApiResponse({status: 200, type: FindMyRewardResponseDto})
     async getMyReward(
         @Param('id') eventId: string,
