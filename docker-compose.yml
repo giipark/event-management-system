@@ -30,9 +30,9 @@ services:
     container_name: mongo
     ports:
       - "27017:27017"
-    command: ["--replSet", "rs0", "--bind_ip_all"]
+#    command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes:
-      - ./init-replica.js:/docker-entrypoint-initdb.d/init-replica.js
+#      - ./init-replica.js:/docker-entrypoint-initdb.d/init-replica.js
       - mongo_data:/data/db
 
 volumes:
