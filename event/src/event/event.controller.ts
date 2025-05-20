@@ -5,7 +5,7 @@ import {JwtAuthGuard} from "../auth/guards/jwt.guard";
 import {RoleGuard} from "../auth/guards/role.guard";
 import {Role} from "../common/decorate/role.decorator";
 import {ApiName} from "../common/decorate/api-name";
-import {ApiBearerAuth, ApiBody, ApiQuery, ApiResponse} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiBody, ApiParam, ApiProperty, ApiQuery, ApiResponse} from "@nestjs/swagger";
 import {CreateEventResponseDto} from "./dto/response/create-event.response.dto";
 import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
 import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
@@ -42,6 +42,7 @@ export class EventController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 생성'})
+    @ApiBody({type: CreateEventRequestDto})
     @ApiResponse({status: 200, type: CreateEventResponseDto, description: '이벤트가 성공적으로 생성되었습니다.'})
     @ApiResponse({status: 401, description: '인증되지 않은 사용자입니다.'})
     @ApiResponse({status: 403, description: '관리자 권한이 없습니다.'})
@@ -55,6 +56,8 @@ export class EventController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 수정'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
+    @ApiBody({type: UpdateEventRequestDto})
     @ApiResponse({status: 200, type: UpdateEventResponseDto, description: '이벤트 수정 성공'})
     @ApiResponse({status: 404, description: '이벤트를 찾을 수 없음'})
     async updateEvent(
@@ -70,6 +73,8 @@ export class EventController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 보상 추가'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
+    @ApiBody({type: [CreateBenefitRequestDto]})
     @ApiResponse({status: 201, type: [CreateBenefitResponseDto], description: '보상 등록 성공'})
     async createBenefit(
         @Param('id') eventId: string,
@@ -81,6 +86,7 @@ export class EventController {
     @Get()
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '이벤트 목록 조회'})
+    @ApiQuery({type: FindEventRequestDto})
     @ApiResponse({status: 200, description: '이벤트 목록 반환', type: [FindEventResponseDto]})
     async getEventList(
         @Query() query: FindEventRequestDto,
@@ -92,6 +98,7 @@ export class EventController {
     @Get(':id')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '이벤트 상세 조회'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
     @ApiResponse({status: 200, type: FindEventDetailResponseDto})
     @ApiResponse({status: 404, description: '이벤트를 찾을 수 없음'})
     async getEventDetail(
@@ -117,6 +124,7 @@ export class EventController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '이벤트 당첨자 목록 조회'})
+    @ApiQuery({type: FindEventWinnersRequestDto})
     @ApiResponse({status: 200, type: [FindEventWinnersResponseDto]})
     async getEventWinners(
         @Query() query: FindEventWinnersRequestDto,
@@ -128,6 +136,7 @@ export class EventController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '당첨 보상 지급 완료 처리'})
+    @ApiBody({type: CompleteRewardRequestDto})
     @ApiResponse({status: 200, type: CompleteRewardResponseDto})
     async completeRewards(
         @Body() dto: CompleteRewardRequestDto,
@@ -139,6 +148,7 @@ export class EventController {
     @UseGuards(JwtAuthGuard, RoleGuard)
     @Role(RoleType.ADMIN)
     @ApiName({summary: '보상 취소 처리'})
+    @ApiBody({type: CancelRewardRequestDto})
     @ApiResponse({status: 200, description: '취소 성공'})
     async cancelReward(
         @Body() dto: CancelRewardRequestDto,
@@ -152,6 +162,7 @@ export class EventController {
     @Get(':id/announcement')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '이벤트 당첨자 발표 조회'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
     @ApiResponse({status: 200, type: [FindEventAnnouncementResponseDto]})
     async getEventAnnouncement(
         @Param('id') eventId: string,
@@ -170,6 +181,7 @@ export class EventController {
     @Post(':id/invite-code')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '이벤트 친구초대형 초대코드 등록'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
     @ApiBody({type: RegisterInviteCodeRequestDto, description: '사용 할 초대코드'})
     @ApiResponse({status: 201, type: Boolean, description: '이벤트 참여 성공'})
     async registerInviteCode(
@@ -193,6 +205,7 @@ export class EventController {
     @Post(':id/reward-request')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '안내형 이벤트 보상 요청 등록'})
+    @ApiParam({name: 'id', type: String, description: '이벤트 ID'})
     @ApiResponse({status: 200, description: '요청 성공 여부'})
     async requestAlertReward(
         @Param('id') eventId: string,

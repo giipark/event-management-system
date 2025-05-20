@@ -5,63 +5,71 @@ import {EventBenefitRequestDto} from "./event-benefit.request.dto";
 import {Type} from "class-transformer";
 import {ParticipationPolicy} from "../../schema/const/participation-policy.enum";
 import {ParticipantType} from "../../schema/const/participant-type.enum";
+import {ApiProperty, ApiPropertyOptional} from "@nestjs/swagger";
 
 export class CreateEventRequestDto {
-    /** 이벤트 제목 */
+    @ApiProperty({example: '출석체크 이벤트', description: '이벤트 제목'})
     @IsString()
     title: string;
 
-    /** 이벤트 유형 */
+    @ApiProperty({example: EventType.CHECK, enum: EventType, description: '이벤트 유형'})
     @IsEnum(EventType)
     type: EventType;
 
-    /** 공개 여부 (ACTIVE / INACTIVE) */
+    @ApiProperty({example: EventStatus.ACTIVE, enum: EventStatus, description: '공개 여부'})
     @IsEnum(EventStatus)
     status: EventStatus;
 
-    /** 이벤트 설명 (optional) */
+    @ApiPropertyOptional({example: '매일 출석시 포인트 지급', description: '이벤트 설명 (선택사항)'})
     @IsOptional()
     @IsString()
     description?: string;
 
-    /** 시작일 (ISO 형식) */
+    @ApiProperty({example: '2025-05-21T00:00:00.000Z', description: '이벤트 시작일 (ISO 형식)'})
     @IsDateString()
     startAt: string;
 
-    /** 종료일 */
+    @ApiProperty({example: '2025-06-01T23:59:59.000Z', description: '이벤트 종료일 (ISO 형식)'})
     @IsDateString()
     endAt: string;
 
-    /** 참여 제한 정책 */
+    @ApiProperty({example: ParticipationPolicy.ONCE, enum: ParticipationPolicy, description: '참여 제한 정책'})
     @IsEnum(ParticipationPolicy)
     participationPolicy: ParticipationPolicy;
 
-    /** 참여 조건 유형 (QUIZ, ALARM, NONE) */
+    @ApiProperty({example: ParticipantType.QUIZ, enum: ParticipantType, description: '참여 조건 유형'})
     @IsEnum(ParticipantType)
     participantType: ParticipantType;
 
-    /** 퀴즈 정답 (QUIZ일 때) */
+    @ApiPropertyOptional({example: 'MAPLE', description: '퀴즈 정답 (QUIZ일 경우 필수)'})
     @IsOptional()
     @IsString()
     quizAnswer?: string;
 
-    /** 알림 동의 항목 리스트 (ALARM일 때) */
+    @ApiPropertyOptional({
+        example: ['SMS', 'EMAIL'],
+        description: '알림 동의 항목 리스트 (ALARM일 경우 필수)',
+        type: [String]
+    })
     @IsOptional()
     @IsArray()
     @IsString({each: true})
     alarmTypes?: string[];
 
-    /** 연속 출석 일수 기준 */
+    @ApiPropertyOptional({example: 5, description: '연속 출석 일수 기준'})
     @IsOptional()
     @IsNumber()
     continuousDaysRequired?: number;
 
-    /** 누적 출석 일수 기준 */
+    @ApiPropertyOptional({example: 10, description: '누적 출석 일수 기준'})
     @IsOptional()
     @IsNumber()
     totalDaysRequired?: number;
 
-    /** 보상 목록 */
+    @ApiProperty({
+        description: '보상 목록',
+        type: [EventBenefitRequestDto]
+    })
     @IsArray()
     @ValidateNested({each: true})
     @Type(() => EventBenefitRequestDto)
