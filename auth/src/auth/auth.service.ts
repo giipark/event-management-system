@@ -1,7 +1,7 @@
 import {ConflictException, Injectable, NotFoundException, UnauthorizedException} from '@nestjs/common';
 import {User, UserDocument} from "../user/schema/user.schema";
-import {InjectConnection, InjectModel} from "@nestjs/mongoose";
-import {Connection, Model} from "mongoose";
+import {InjectModel} from "@nestjs/mongoose";
+import {Model} from "mongoose";
 import {SignupDto} from "./dto/signup.dto";
 import * as bcrypt from 'bcrypt';
 import {JwtService} from "@nestjs/jwt";
@@ -16,7 +16,6 @@ export class AuthService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
-        @InjectConnection() private readonly connection: Connection,
         private jwtService: JwtService
     ) {
     }
@@ -38,35 +37,24 @@ export class AuthService {
         const hashed = await bcrypt.hash(password, 10);
         const recommendCode = this.generateRecommendCode();
 
-        const session = await this.connection.startSession();
-        session.startTransaction();
+        // 유저 생성
+        const user = await this.userModel.create([{
+            email,
+            password: hashed,
+            nickname,
+            recommendCode,
+            role: RoleType.USER,
+        }]);
 
-        try {
-            // 유저 생성
-            const user = await this.userModel.create([{
-                email,
-                password: hashed,
-                nickname,
-                recommendCode,
-                role: RoleType.USER,
-            }], {session});
+        // 인벤토리 생성
+        await this.inventoryModel.create([{
+            userId: user[0]._id,
+            point: 0,
+            coupons: [],
+            items: [],
+        }]);
 
-            // 인벤토리 생성
-            await this.inventoryModel.create([{
-                userId: user[0]._id,
-                point: 0,
-                coupons: [],
-                items: [],
-            }], {session});
-
-            await session.commitTransaction();
-            return user[0].toObject();
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            await session.endSession();
-        }
+        return user[0].toObject();
     }
 
     /**
