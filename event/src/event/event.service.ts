@@ -443,10 +443,10 @@ export class EventService {
             });
 
             // 보상 정보 조회
-            const benefit = await this.eventBenefitModel.findOne({ eventId }).lean();
+            const benefit = await this.eventBenefitModel.findOne({eventId}).lean();
             if (!benefit) throw new NotFoundException('이벤트 보상 정보가 없습니다.');
 
-            const { rewardType, rewardValue } = benefit;
+            const {rewardType, rewardValue} = benefit;
 
             // 보상 지급
             await this.inventoryModel.updateOne(
@@ -458,6 +458,66 @@ export class EventService {
             await this.inventoryModel.updateOne(
                 {userId: inviter._id}, // 초대한 사람
                 getRewardUpdate(rewardType, rewardValue),
+                {upsert: true, session}
+            );
+
+            return {success: true};
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            await session.endSession();
+        }
+    }
+
+    /**
+     * 안내형 이벤트 보상 요청 등록
+     * @param userId
+     * @param eventId
+     */
+    async requestAlertReward(userId: string, eventId: string): Promise<{ success: boolean }> {
+        const session: ClientSession = await this.connection.startSession();
+        session.startTransaction();
+
+        try {
+            const event = await this.eventModel.findById(eventId).lean();
+            if (!event) throw new NotFoundException('이벤트를 찾을 수 없습니다.');
+
+            // 이벤트 유형 체크
+            if (event.type !== EventType.ANNOUNCE) {
+                throw new BadRequestException('안내형 이벤트가 아닙니다.');
+            }
+
+            // 중복 요청 방지
+            const exists = await this.eventReqModel.exists({userId, eventId});
+            if (exists) {
+                throw new ConflictException('이미 보상을 요청하셨습니다.');
+            }
+
+            // 보상 정보 조회
+            const benefit = await this.eventBenefitModel.findOne({eventId}).lean();
+            if (!benefit) throw new NotFoundException('보상 정보가 없습니다.');
+
+            const eventReq = await this.eventReqModel.create({
+                userId,
+                eventId,
+                joinedAt: new Date(),
+            });
+
+            await this.eventWinnerModel.create({
+                userId,
+                eventId,
+                eventReqId: eventReq._id, // 위에서 생성된 참여 ID
+                rewardType: benefit.rewardType,
+                rewardValue: benefit.rewardValue,
+                status: RewardStatus.COMPLETED,
+                wonAt: new Date(),
+            });
+
+            // 보상 지급
+            await this.inventoryModel.updateOne(
+                {userId},
+                getRewardUpdate(benefit.rewardType, benefit.rewardValue),
                 {upsert: true, session}
             );
 

@@ -180,11 +180,21 @@ export class EventController {
 
     @Get('invite-code/users')
     @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
     @ApiName({summary: '나의 초대코드를 사용한 유저 목록 조회'})
     @ApiResponse({status: 200, type: [FindInviteUsedUsersResponseDto]})
     async getMyInviteUsers(@Req() req: any): Promise<FindInviteUsedUsersResponseDto[]> {
         return this.userService.getMyInviteUsers(req.user._id);
+    }
+
+    @Post(':id/reward-request')
+    @UseGuards(JwtAuthGuard)
+    @ApiName({ summary: '안내형 이벤트 보상 요청 등록' })
+    @ApiResponse({ status: 200, description: '요청 성공 여부' })
+    async requestAlertReward(
+        @Param('id') eventId: string,
+        @Req() req: any,
+    ): Promise<{ success: boolean }> {
+        return this.eventService.requestAlertReward(req.user._id, eventId);
     }
 
 }
