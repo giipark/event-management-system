@@ -7,12 +7,14 @@ import {JwtModule} from "@nestjs/jwt";
 import {ConfigModule, ConfigService} from "@nestjs/config";
 import {JwtStrategy} from "./strategies/jwt.strategy";
 import {Inventory, InventorySchema} from "../user/schema/inventory.schema";
+import {LoginHist, LoginHistSchema} from "../user/schema/login-hist.schema";
 
 @Module({
     imports: [
         MongooseModule.forFeature([
             {name: User.name, schema: UserSchema},
             {name: Inventory.name, schema: InventorySchema},
+            {name: LoginHist.name, schema: LoginHistSchema},
         ]),
         JwtModule.registerAsync({
             imports: [ConfigModule],

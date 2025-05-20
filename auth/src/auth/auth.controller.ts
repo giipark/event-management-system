@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post, Request, UseGuards} from '@nestjs/common';
+import {Body, Controller, Get, Post, Req, UseGuards} from '@nestjs/common';
 import {ApiBearerAuth, ApiBody, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {AuthService} from "./auth.service";
 import {SignupDto} from "./dto/signup.dto";
@@ -14,6 +14,7 @@ import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
 import {PromoteUserRequestDto} from "./dto/promote-user.request.dto";
 import {RoleGuard} from "./guards/role.guard";
 import {Role} from "../common/decorate/role.decorator";
+import {Request} from 'express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -37,8 +38,8 @@ export class AuthController {
     @ApiBody({type: LoginDto})
     @ApiResponse({status: 200, type: LoginResponseDto, description: '로그인 성공'})
     @ApiResponse({status: 401, description: '로그인 실패'})
-    async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
-        return this.authService.login(loginDto);
+    async login(@Req() req: Request, @Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+        return this.authService.login(loginDto, req);
     }
 
     @UseGuards(JwtAuthGuard)
@@ -46,8 +47,9 @@ export class AuthController {
     @ApiResponse({status: 200, description: '로그인된 유저 정보 조회 성공', type: ProfileResponseDto})
     @ApiResponse({status: 401, description: '유저 정보 조회 실패'})
     @ApiBearerAuth()
-    async getProfile(@Request() req): Promise<ProfileResponseDto> {
-        return this.authService.getProfile(req.user._id);
+    async getProfile(@Req() req: Request): Promise<ProfileResponseDto> {
+        const _id = req.user._id.toString()
+        return this.authService.getProfile(_id);
     }
 
     @Post('validate-token')

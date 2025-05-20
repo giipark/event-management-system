@@ -10,12 +10,15 @@ import {ProfileResponseDto} from "./dto/profile.response.dto";
 import {ValidateTokenResponseDto} from "./dto/validate-token.response.dto";
 import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
 import {RoleType} from "../user/schema/const/role-type.enum";
+import {LoginHist, LoginHistDocument} from "../user/schema/login-hist.schema";
+import {Request} from 'express'
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
+        @InjectModel(LoginHist.name) private loginHistModel: Model<LoginHistDocument>,
         private jwtService: JwtService
     ) {
     }
@@ -71,8 +74,9 @@ export class AuthService {
     /**
      * 로그인
      * @param dto
+     * @param req
      */
-    async login(dto: LoginDto): Promise<{ accessToken: string }> {
+    async login(dto: LoginDto, req: Request): Promise<{ accessToken: string }> {
         const {email, password} = dto;
 
         // 이메일 체크
@@ -86,12 +90,20 @@ export class AuthService {
         const payload = {_id: user._id, email: user.email, role: user.role};
         const accessToken = this.jwtService.sign(payload);
 
+        if (accessToken) {
+            await this.loginHistModel.create({
+                userId: user._id,
+                ip: req.ip,
+                userAgent: req.headers['user-agent'],
+            });
+        }
+
         return {accessToken};
     }
 
     /**
      * 나의 정보 조회
-     * @param id
+     * @param _id
      */
     async getProfile(_id: string) {
         const user = await this.userModel.findById(_id).lean();
