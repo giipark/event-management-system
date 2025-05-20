@@ -16,10 +16,18 @@ docker compose up --build
 # 이전에 --build를 했었다면 재 실행시 --build 하지 않아도 됨
 docker compose up
 ```
-4. 브라우저 각각의 서비스 접속주소:
-* gateway: http://localhost:3000
-* auth: http://localhost:3001
-* event: http://localhost:3002
+4. 브라우저 각각의 서비스 swagger 접속주소:
+* gateway: http://localhost:3000/swagger
+* auth: http://localhost:3001/swagger
+* event: http://localhost:3002/swagger
+
+5. ./auth/.env 와 ./event/.env를 만들어서 아래 내용 붙여넣기. (app이 사용하는 DB 이름)
+```bash
+MONGO_DB=mongodb://mongo:27017/app
+
+JWT_SECRET=your_secret_key
+JWT_EXPIRES_IN=1h
+```
 
 ✅ 어떤 서비스가 켜져 있는지 상태 확인 가능
 ```bash
