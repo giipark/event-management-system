@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Patch, Post, Query, Req, Request, UseGuards} from '@nestjs/common';
+import {Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards} from '@nestjs/common';
 import {EventService} from "./event.service";
 import {CreateEventRequestDto} from "./dto/request/create-event.request.dto";
 import {JwtAuthGuard} from "../auth/guards/jwt.guard";
@@ -27,6 +27,7 @@ import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.respo
 import {RegisterInviteCodeRequestDto} from "./dto/request/register-invite-code.request.dto";
 import {FindInviteUsedUsersResponseDto} from "../user/dto/response/find-invite-used-users.response.dto";
 import {UserService} from "../user/user.service";
+import {Request} from 'express';
 
 @Controller('event')
 @ApiBearerAuth()
@@ -45,9 +46,9 @@ export class EventController {
     @ApiResponse({status: 401, description: '인증되지 않은 사용자입니다.'})
     @ApiResponse({status: 403, description: '관리자 권한이 없습니다.'})
     @ApiResponse({status: 400, description: '잘못된 요청입니다.'})
-    async createEvent(@Body() dto: CreateEventRequestDto, @Req() req: any): Promise<CreateEventResponseDto> {
-        const id = req.user._id
-        return this.eventService.createEvent(dto, id);
+    async createEvent(@Body() dto: CreateEventRequestDto, @Req() req: Request): Promise<CreateEventResponseDto> {
+        const userId = req.user?._id?.toString();
+        return this.eventService.createEvent(dto, userId);
     }
 
     @Patch(':id')
@@ -59,9 +60,9 @@ export class EventController {
     async updateEvent(
         @Param('id') id: string,
         @Body() dto: UpdateEventRequestDto,
-        @Req() req: any,
+        @Req() req: Request,
     ): Promise<UpdateEventResponseDto> {
-        const adminId = req.user.userId;
+        const adminId = req.user?._id?.toString();
         return this.eventService.updateEvent(id, dto, adminId);
     }
 
@@ -83,7 +84,7 @@ export class EventController {
     @ApiResponse({status: 200, description: '이벤트 목록 반환', type: [FindEventResponseDto]})
     async getEventList(
         @Query() query: FindEventRequestDto,
-        @Request() req,
+        @Req() req: Request,
     ): Promise<FindEventResponseDto[]> {
         return this.eventService.findEventList(query, req.user.role);
     }
@@ -95,7 +96,7 @@ export class EventController {
     @ApiResponse({status: 404, description: '이벤트를 찾을 수 없음'})
     async getEventDetail(
         @Param('id') id: string,
-        @Request() req,
+        @Req() req: Request,
     ): Promise<FindEventDetailResponseDto> {
         return this.eventService.findEventDetail(id, req.user.role);
     }
@@ -141,10 +142,11 @@ export class EventController {
     @ApiResponse({status: 200, description: '취소 성공'})
     async cancelReward(
         @Body() dto: CancelRewardRequestDto,
-        @Req() req: any,
+        @Req() req: Request,
     ): Promise<{ cancelled: boolean }> {
         // TODO: 현재 단건 취소 -> 복수건으로 취소 가능하게 변경 필요
-        return this.eventService.cancelReward(dto.eventWinnerId, dto.reason, req.user._id);
+        const userId = req.user?._id?.toString();
+        return this.eventService.cancelReward(dto.eventWinnerId, dto.reason, userId);
     }
 
     @Get(':id/announcement')
@@ -161,7 +163,7 @@ export class EventController {
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '종료된 이벤트 목록 조회'})
     @ApiResponse({status: 200, type: [FindEndedEventsResponseDto]})
-    async getEndedEvents(@Req() req: any): Promise<FindEndedEventsResponseDto[]> {
+    async getEndedEvents(@Req() req: Request): Promise<FindEndedEventsResponseDto[]> {
         return this.eventService.findEndedEvents(req.user.role);
     }
 
@@ -173,28 +175,31 @@ export class EventController {
     async registerInviteCode(
         @Param('id') eventId: string,
         @Body() dto: RegisterInviteCodeRequestDto,
-        @Req() req: any,
+        @Req() req: Request,
     ): Promise<{ success: boolean }> {
-        return this.eventService.registerInviteCode(req.user._id, eventId, dto.usedInviteCode);
+        const userId = req.user?._id?.toString();
+        return this.eventService.registerInviteCode(userId, eventId, dto.usedInviteCode);
     }
 
     @Get('invite-code/users')
     @UseGuards(JwtAuthGuard)
     @ApiName({summary: '나의 초대코드를 사용한 유저 목록 조회'})
     @ApiResponse({status: 200, type: [FindInviteUsedUsersResponseDto]})
-    async getMyInviteUsers(@Req() req: any): Promise<FindInviteUsedUsersResponseDto[]> {
-        return this.userService.getMyInviteUsers(req.user._id);
+    async getMyInviteUsers(@Req() req: Request): Promise<FindInviteUsedUsersResponseDto[]> {
+        const userId = req.user?._id?.toString();
+        return this.userService.getMyInviteUsers(userId);
     }
 
     @Post(':id/reward-request')
     @UseGuards(JwtAuthGuard)
-    @ApiName({ summary: '안내형 이벤트 보상 요청 등록' })
-    @ApiResponse({ status: 200, description: '요청 성공 여부' })
+    @ApiName({summary: '안내형 이벤트 보상 요청 등록'})
+    @ApiResponse({status: 200, description: '요청 성공 여부'})
     async requestAlertReward(
         @Param('id') eventId: string,
-        @Req() req: any,
+        @Req() req: Request,
     ): Promise<{ success: boolean }> {
-        return this.eventService.requestAlertReward(req.user._id, eventId);
+        const userId = req.user?._id?.toString();
+        return this.eventService.requestAlertReward(userId, eventId);
     }
 
 }
