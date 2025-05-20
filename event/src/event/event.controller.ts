@@ -23,6 +23,7 @@ import {CompleteRewardRequestDto} from "./dto/request/complete-reward.request.dt
 import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
 import {CancelRewardRequestDto} from "./dto/request/cancel-reward.request.dto";
 import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
+import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.response.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -141,12 +142,21 @@ export class EventController {
     }
 
     @Get(':id/announcement')
+    @UseGuards(JwtAuthGuard)
     @ApiName({ summary: '이벤트 당첨자 발표 조회' })
     @ApiResponse({ status: 200, type: [FindEventAnnouncementResponseDto] })
     async getEventAnnouncement(
         @Param('id') eventId: string,
     ): Promise<FindEventAnnouncementResponseDto[]> {
         return this.eventService.findEventAnnouncement(eventId);
+    }
+
+    @Get('ended')
+    @UseGuards(JwtAuthGuard)
+    @ApiName({ summary: '종료된 이벤트 목록 조회' })
+    @ApiResponse({ status: 200, type: [FindEndedEventsResponseDto] })
+    async getEndedEvents(@Req() req: any): Promise<FindEndedEventsResponseDto[]> {
+        return this.eventService.findEndedEvents(req.user.role);
     }
 
 }

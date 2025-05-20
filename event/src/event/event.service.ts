@@ -26,6 +26,7 @@ import {Inventory, InventoryDocument} from "../user/schema/inventory.schema";
 import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response.dto";
 import {RewardCancelLog, RewardCancelLogDocument} from "./schema/reward-cancel-log.schema";
 import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
+import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.response.dto";
 
 @Injectable()
 export class EventService {
@@ -352,14 +353,32 @@ export class EventService {
      */
     async findEventAnnouncement(eventId: string): Promise<FindEventAnnouncementResponseDto[]> {
         const winners = await this.eventWinnerModel
-            .find({ eventId, status: RewardStatus.COMPLETED })
+            .find({eventId, status: RewardStatus.COMPLETED})
             .populate('userId', 'email')
             .lean();
 
-        const entities = winners.map(w => ({ ...w, user: w.userId }));
+        const entities = winners.map(w => ({...w, user: w.userId}));
 
         return FindEventAnnouncementResponseDto.fromList(entities);
     }
 
+    /**
+     * 종료된 이벤트 목록 조회
+     * @param role
+     */
+    async findEndedEvents(role: RoleType): Promise<FindEndedEventsResponseDto[]> {
+        const condition: any = {isEnded: true};
+
+        if (role === RoleType.USER) {
+            condition.status = EventStatus.ACTIVE;
+        }
+
+        const events = await this.eventModel
+            .find(condition)
+            .sort({startAt: -1})
+            .lean();
+
+        return FindEndedEventsResponseDto.fromList(events);
+    }
 
 }
