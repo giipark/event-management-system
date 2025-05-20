@@ -1,4 +1,4 @@
-import {Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import {InjectConnection, InjectModel} from "@nestjs/mongoose";
 import {ClientSession, Connection, Model, Types} from "mongoose";
 import {Event, EventDocument} from "./schema/event.schema";
@@ -27,6 +27,8 @@ import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response
 import {RewardCancelLog, RewardCancelLogDocument} from "./schema/reward-cancel-log.schema";
 import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
 import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.response.dto";
+import {User, UserDocument} from "../user/schema/user.schema";
+import {getRewardUpdate} from "../common/utils/util";
 
 @Injectable()
 export class EventService {
@@ -37,6 +39,7 @@ export class EventService {
         @InjectModel(EventWinner.name) private eventWinnerModel: Model<EventWinnerDocument>,
         @InjectModel(Inventory.name) private inventoryModel: Model<InventoryDocument>,
         @InjectModel(RewardCancelLog.name) private rewardCancelLogModel: Model<RewardCancelLogDocument>,
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectConnection() private readonly connection: Connection,
     ) {
     }
@@ -379,6 +382,84 @@ export class EventService {
             .lean();
 
         return FindEndedEventsResponseDto.fromList(events);
+    }
+
+    /**
+     * 이벤트 친구초대형 초대코드 등록
+     * @param userId
+     * @param eventId
+     * @param usedInviteCode
+     */
+    async registerInviteCode(userId: string, eventId: string, usedInviteCode: string): Promise<{ success: boolean }> {
+        const session: ClientSession = await this.connection.startSession();
+        session.startTransaction();
+
+        try {
+            const user = await this.userModel.findById(userId).lean();
+            if (!user?.recommendCode) throw new BadRequestException('유저 초대 코드가 존재하지 않습니다.');
+
+            // 자기 자신의 코드 사용 금지
+            if (user.recommendCode === usedInviteCode) {
+                throw new BadRequestException('자기 자신의 초대코드는 사용할 수 없습니다.');
+            }
+
+            // 이미 참여했는지 체크
+            const hasInvitedBefore = await this.eventReqModel.exists({
+                userId,
+                usedInviteCode: {$ne: null},
+            });
+            if (hasInvitedBefore) {
+                throw new ConflictException('이미 친구초대형 이벤트에 참여하셨습니다.');
+            }
+
+            // 초대코드가 유효한 코드인지 체크
+            const inviter = await this.userModel.findOne({recommendCode: usedInviteCode}).lean();
+            if (!inviter) {
+                throw new BadRequestException('유효하지 않은 초대 코드입니다.');
+            }
+
+            // 내가 가진 초대코드를 inviter가 사용한 적 있는지 체크
+            const mutal = await this.eventReqModel.exists({
+                userId: inviter._id,
+                usedInviteCode: user.recommendCode, // 내 코드
+            });
+            if (mutal) {
+                throw new ConflictException('상호간의 초대는 허용되지 않습니다.');
+            }
+
+            await this.eventReqModel.create({
+                userId,
+                eventId,
+                usedInviteCode,
+                joinedAt: new Date(),
+            });
+
+            // 보상 정보 조회
+            const benefit = await this.eventBenefitModel.findOne({ eventId }).lean();
+            if (!benefit) throw new NotFoundException('이벤트 보상 정보가 없습니다.');
+
+            const { rewardType, rewardValue } = benefit;
+
+            // 보상 지급
+            await this.inventoryModel.updateOne(
+                {userId}, // 자기 자신
+                getRewardUpdate(rewardType, rewardValue),
+                {upsert: true, session}
+            );
+
+            await this.inventoryModel.updateOne(
+                {userId: inviter._id}, // 초대한 사람
+                getRewardUpdate(rewardType, rewardValue),
+                {upsert: true, session}
+            );
+
+            return {success: true};
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            await session.endSession();
+        }
     }
 
 }

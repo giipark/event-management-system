@@ -5,7 +5,7 @@ import {JwtAuthGuard} from "../auth/guards/jwt.guard";
 import {RoleGuard} from "../auth/guards/role.guard";
 import {Role} from "../common/decorate/role.decorator";
 import {ApiName} from "../common/decorate/api-name";
-import {ApiBearerAuth, ApiQuery, ApiResponse} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiBody, ApiQuery, ApiResponse} from "@nestjs/swagger";
 import {CreateEventResponseDto} from "./dto/response/create-event.response.dto";
 import {UpdateEventResponseDto} from "./dto/response/update-event.response.dto";
 import {UpdateEventRequestDto} from "./dto/request/update-event.request.dto";
@@ -24,6 +24,7 @@ import {CompleteRewardResponseDto} from "./dto/response/complete-reward.response
 import {CancelRewardRequestDto} from "./dto/request/cancel-reward.request.dto";
 import {FindEventAnnouncementResponseDto} from "./dto/response/find-event-announcement.response.dto";
 import {FindEndedEventsResponseDto} from "./dto/response/find-ended-events.response.dto";
+import {RegisterInviteCodeRequestDto} from "./dto/request/register-invite-code.request.dto";
 
 @Controller('event')
 @ApiBearerAuth()
@@ -158,5 +159,19 @@ export class EventController {
     async getEndedEvents(@Req() req: any): Promise<FindEndedEventsResponseDto[]> {
         return this.eventService.findEndedEvents(req.user.role);
     }
+
+    @Post(':id/invite-code')
+    @UseGuards(JwtAuthGuard)
+    @ApiName({ summary: '이벤트 친구초대형 초대코드 등록' })
+    @ApiBody({type: RegisterInviteCodeRequestDto, description: '사용 할 초대코드'})
+    @ApiResponse({status: 201, type: Boolean, description: '이벤트 참여 성공'})
+    async registerInviteCode(
+        @Param('id') eventId: string,
+        @Body() dto: RegisterInviteCodeRequestDto,
+        @Req() req: any,
+    ): Promise<{ success: boolean }> {
+        return this.eventService.registerInviteCode(req.user._id, eventId, dto.usedInviteCode);
+    }
+
 
 }
